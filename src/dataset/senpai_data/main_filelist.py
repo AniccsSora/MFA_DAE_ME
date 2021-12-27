@@ -1,4 +1,18 @@
 # -*- coding: utf-8 -*-
+#Author: Wei-Chien Wang
+"""
+Created on Fri Oct 16 10:24:51 2020
+This code is used for unsupervised blind monoural periodic source separation based on perioidic-coded deep autoencoder (, with MSE loss)
+If you find this code useful in your research, please cite:
+Citation: 
+       [1] K.-H. Tsai, W.-C. Wang, C.-H. Cheng, C.-Y. Tsai, J.-K. Wang, T.-H. Lin, S.-H. Fang, L.-C. Chen, and Y. Tsao, "Blind Monaural Source Separation on Heart and Lung Sounds Based on Periodic-Coded Deep Autoencoder," to appear in IEEE Journal of Biomedical and Health Informatics.
+
+Contact:
+       Wei-Chien Wang
+       Weichian0920@gmail.com
+       Academia Sinica, Taipei, Taiwan
+       
+"""
 import argparse
 import time
 from utils import misc
@@ -12,53 +26,43 @@ from source_separation import MFA
 from dataset.HLsep_dataloader import hl_dataloader, val_dataloader
 import scipy.io.wavfile as wav
 import os
-from os.path import join as pjoin
-import tester
-import logging
-logging.getLogger(__name__)
 
 # parser#
+
 parser = argparse.ArgumentParser(description='PyTorch Source Separation')
-parser.add_argument('--model_type', type=str, default='DAE_C', help='model type', choices=['DAE_C', 'DAE_F'])
+parser.add_argument('--model_type', type=str, default='DAE_C', help='model type')
 parser.add_argument('--data_feature', type=str, default='lps', help='lps or wavform')
+
 parser.add_argument('--pretrained', default=False, help='load pretrained model or not')
 parser.add_argument('--pretrained_path', type=str, default=None, help='pretrained_model path')
 parser.add_argument('--trainOrtest', type=str, default="train", help='status of training')
 # training hyperparameters
 parser.add_argument('--optim', type=str, default="Adam", help='optimizer for training', choices=['RMSprop', 'SGD', 'Adam'])
-parser.add_argument('--batch_size', type=int, default=32, help='batch size for training (default: 32)')
-parser.add_argument('--lr', type=float, default=1e-4, help='initial learning rate for training (default: 1e-3)')
-parser.add_argument('--CosineAnnealingWarmRestarts', type=bool, default=False, help='optimizer scheduler for training')
+parser.add_argument('--batch_size', type=int, default=32, help='input batch size for training (default: 64)')
+parser.add_argument('--lr', type=int, default=1e-3, help='initial learning rate for training (default: 1e-3)')
+parser.add_argument('--CosineAnnealingWarmRestarts', type=bool, default=False, help='initial learning rate for training (default: 1e-3)')
 parser.add_argument('--epochs', type=int, default=50, help='number of epochs to train (default: 10)')
 parser.add_argument('--grad_scale', type=float, default=8, help='learning rate for wage delta calculation')
 parser.add_argument('--seed', type=int, default=117, help='random seed (default: 1)')
 
 parser.add_argument('--log_interval', type=int, default=100,  help='how many batches to wait before logging training status')
 parser.add_argument('--test_interval', type=int, default=1,  help='how many epochs to wait before another test')
-parser.add_argument('--logdir', default='log/', help='folder to save to the log')
+parser.add_argument('--logdir', default='log/default/', help='folder to save to the log')
 parser.add_argument('--decreasing_lr', default='200,250', help='decreasing strategy')
 # MFA hyperparameters
-parser.add_argument('--source_num', type=int, default=3, help='number of separated sources')
-parser.add_argument('--clustering_alg', type=str, default='NMF', choices=['NMF', 'K_MEANS'], help='clustering algorithm for embedding space')
+parser.add_argument('--source_num', type=str, default=3, help='number of separated sources')
 parser.add_argument('--wienner_mask', type=bool, default=True, help='wienner time-frequency mask for output')
-
+parser.add_argument('--clustering_alg', type=str, default='NMF', help='clustering algorithm for embedding space')
 args = parser.parse_args()
 args.cuda = torch.cuda.is_available()
-#  misc.logger.init(args.logdir, 'train_log_')  # 拒用
-#  logger = misc.logger.info  #  == print()
-misc.ensure_dir(args.logdir)
-#  取時戳
-current_time = datetime.now().strftime('%Y_%m%d_%H%M_%S')
-#  拚 log 資料夾名
-args.logdir = args.logdir + str(args.model_type) + "_" + str(current_time)
-os.makedirs(args.logdir)
-#  log 位置與檔案名
-log_full_path = pjoin(args.logdir, f'log_{current_time}.txt')
-logging.basicConfig(filename=log_full_path, level=logging.INFO, force=True, filemode='w')
-logger = logging.info
+misc.logger.init(args.logdir, 'train_log_')
+logger = misc.logger.info
+
 starttime = time.time()
+current_time = datetime.now().strftime('%Y%m%d_%H%M')
+args.logdir = args.logdir + str(args.model_type) + "_" + str(current_time)
 
-
+misc.ensure_dir(args.logdir)
 logger("=================FLAGS==================")
 for k, v in args.__dict__.items():
     logger('{}: {}'.format(k, v))
@@ -77,8 +81,7 @@ best_acc, old_file = 0, None
 per_save_epoch = 30
 t_begin = time.time()
 grad_scale = args.grad_scale
-
-# Default model dictionary
+# model dictionary
 DAE_C_dict = {
         "frequency_bins": [0, 300],
         "encoder": [32, 16, 8],
@@ -106,9 +109,6 @@ model_dict = {
     'DAE_C': DAE_C_dict,
     'DAE_F': DAE_F_dict
 }
-
-
-# Default fourier transform parameters
 FFT_dict = {
     'sr': 8000,
     'frequency_bins': [0, 300],
@@ -117,7 +117,7 @@ FFT_dict = {
     'Win_length': 2048,
     'normalize': True,
 }
-# declare model object
+# declare model
 net = Model[args.model_type](model_dict=model_dict[args.model_type], args=args, logger=logger).cuda()
 
 torch.manual_seed(args.seed)
@@ -129,16 +129,21 @@ if args.cuda:
 if __name__ == "__main__":
 
     # data loader
-    test_filelist = ["./dataset/0_0.wav"]
-    test_filename = test_filelist[0].split('/')[-1].split('.')[0]  # get pure-filename
-    outdir = "{}/test_".format(args.logdir)
-    train_loader = hl_dataloader(test_filelist,
-                                 batch_size=args.batch_size,
-                                 shuffle=True,
-                                 num_workers=0,
-                                 pin_memory=False,
-                                 FFT_dict=FFT_dict,
-                                 args=args)
+    test_filelist = ["/home/lab001/weichian/MFA_DAE/src_pytorch/dataset/0_0.wav"]
+    path = "/home/lab001/weichian/MFA_DAE/src_pytorch/dataset/samples/heart_lung_sam2/mix/training_noisy"
+    test_filelist = []
+    filename_list = []
+    exp_filelist = []
+    db = []
+    for root, dirs, files in os.walk(path):
+        for f in files:
+            filename_list.append(f)
+            test_filelist.append(os.path.join(root, f))
+            db.append(root.split("dB")[0].split("/")[-1])
+            print(db)
+
+    outdir = "{0}/test_".format(args.logdir)
+    train_loader = hl_dataloader(test_filelist, batch_size=args.batch_size, shuffle=True, num_workers=1, pin_memory=True, FFT_dict=FFT_dict, args=args)
     # train
     net = train.train(train_loader, net, args, logger)
     for batch_idx, data in enumerate(train_loader):
@@ -148,15 +153,12 @@ if __name__ == "__main__":
         output = net(data)
         output_ = torch.reshape(output, (-1,)).detach().cpu()
     output_ = output_.numpy()
-    # 不能聽，故不存檔
-    # wav.write(pjoin(args.logdir, "reconstruct.wav"), 8000, np.int16(output_*32768.))
+    wav.write("reconstruct.wav", 8000, np.int16(output_*32768.))
 
     # Source Separation by MFA analysis.
     mfa = MFA.MFA_source_separation(net, FFT_dict=FFT_dict, args=args)
-    for test_file in test_filelist:
+    for i, test_file in enumerate(test_filelist):
         # load test data
         lps, phase, mean, std = val_dataloader(test_file, FFT_dict)
-        mfa.source_separation(np.array(lps), np.array(phase),
-                              np.array(mean), np.array(std),
-                              filedir=outdir,
-                              filename=test_filename)
+        #mfa.source_separation(np.array(lps), np.array(phase), np.array(mean), np.array(std), filedir=outdir, filename="test")
+        mfa.source_separation(np.array(lps), np.array(phase), np.array(mean), np.array(std), filedir="{0}/{1}db/".format(outdir, db[i]), filename=filename_list[i])

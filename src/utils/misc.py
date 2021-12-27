@@ -5,7 +5,7 @@ import pickle as pkl
 import time
 import numpy as np
 import hashlib
-
+import logging
 #from IPython import embed
 
 class Logger(object):
@@ -14,7 +14,7 @@ class Logger(object):
 
     def init(self, logdir, name='log'):
         if self._logger is None:
-            import logging
+            #  import logging  # 移動到外側
             if not os.path.exists(logdir):
                 os.makedirs(logdir)
             log_file = os.path.join(logdir, name)
@@ -30,9 +30,9 @@ class Logger(object):
     def info(self, str_info):
         self.init('/tmp', 'tmp.log')
         self._logger.info(str_info)
-logger = Logger()
+#  logger = Logger()  #  戳，原因，只單純使用 ensure_dir 會被擋。import 時就會跑到這
 
-print = logger.info
+#  print = logger.info  # 戳，
 def ensure_dir(path, erase=False):
     if os.path.exists(path) and erase:
         print("Removing old folder {}".format(path))

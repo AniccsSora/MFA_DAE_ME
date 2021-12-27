@@ -6,10 +6,12 @@ import time
 from datetime import datetime
 import numpy as np
 import torch
+from os.path import join as pjoin
 import torch.nn as nn
 import torch.optim as optim
 from torch.autograd import Variable
 from utils import misc, make_path, signalprocess
+from tqdm import tqdm
 
 
 def train(train_loader, net=None, args=None, logger=None):
@@ -28,10 +30,10 @@ def train(train_loader, net=None, args=None, logger=None):
         print("cos")
         train_scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=1, T_mult=2)
 
-    best_loss = 100
     old_file = 0
+    __loss = None
     # start training
-    for epoch in range(args.epochs):
+    for epoch in tqdm(range(args.epochs), desc='Training epoch', smoothing=0.1, ncols=100):
         avg_batch_loss = 0
         for batch_idx, data in enumerate(train_loader):
             if args.cuda:
@@ -44,9 +46,14 @@ def train(train_loader, net=None, args=None, logger=None):
             loss.backward()
             optimizer.step()
             # train_scheduler.step(epoch+batch_idx/311)
-        new_file = os.path.join(args.logdir, 'latest.pth')
+        new_file = os.path.join(args.logdir, 'latest.pt')
         misc.model_save(net, new_file, old_file=old_file, verbose=False)
         old_file = new_file
-        
-        logger("epoch{0}:{1}".format(epoch, avg_batch_loss/(batch_idx)))
+
+        __loss = avg_batch_loss / batch_idx
+        logger("epoch{0}:{1}".format(epoch, __loss))
+
+    # 紀錄 最後的 loss
+    with open(pjoin(args.logdir, 'final_loss_{:.4f}'.format(__loss)), mode='w'):
+        print("final loss", __loss)
     return net
