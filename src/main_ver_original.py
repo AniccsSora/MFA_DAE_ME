@@ -129,7 +129,7 @@ if args.cuda:
 if __name__ == "__main__":
 
     # data loader
-    test_filelist = ["./dataset/0_0.wav"]
+    test_filelist = ["./dataset/4_1.wav"]
     test_filename = test_filelist[0].split('/')[-1].split('.')[0]  # get pure-filename
     outdir = "{}/test_".format(args.logdir)
     train_loader = hl_dataloader(test_filelist,
@@ -141,15 +141,6 @@ if __name__ == "__main__":
                                  args=args)
     # train
     net = train.train(train_loader, net, args, logger)
-    for batch_idx, data in enumerate(train_loader):
-        if args.cuda:
-            data = data.cuda().float()
-        data = Variable(data)
-        output = net(data)
-        output_ = torch.reshape(output, (-1,)).detach().cpu()
-    output_ = output_.numpy()
-    # 不能聽，故不存檔
-    # wav.write(pjoin(args.logdir, "reconstruct.wav"), 8000, np.int16(output_*32768.))
 
     # Source Separation by MFA analysis.
     mfa = MFA.MFA_source_separation(net, FFT_dict=FFT_dict, args=args)
