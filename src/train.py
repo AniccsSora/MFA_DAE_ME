@@ -55,5 +55,5 @@ def train(train_loader, net=None, args=None, logger=None):
 
     # 紀錄 最後的 loss
     with open(pjoin(args.logdir, 'final_loss_{:.4f}'.format(__loss)), mode='w'):
-        print("final loss", __loss)
+        print("final loss:", __loss.item())
     return net
