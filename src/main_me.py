@@ -129,7 +129,8 @@ if args.cuda:
 if __name__ == "__main__":
 
     # data loader
-    test_filelist = ["./dataset/4_1.wav"]
+    #test_filelist = ["./dataset/4_1.wav"]
+    test_filelist = ["./dataset/4_1_5sec.wav"]
     test_filename = test_filelist[0].split('/')[-1].split('.')[0]  # get pure-filename
     outdir = "{}/test_".format(args.logdir)
     train_loader = hl_dataloader(test_filelist,
