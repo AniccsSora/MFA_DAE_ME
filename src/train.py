@@ -1,6 +1,4 @@
 #/--coding:utf-8/
-#/author:Ethan Wang/
-
 import os
 import time
 from datetime import datetime
