@@ -70,17 +70,34 @@ class MFA_source_separation(object):
             label: int 
                 latent neuron label.
         """
-        frame_num = encoded_img.shape[0]
-        encoding_shape = encoded_img.shape[1]
+        frame_num = encoded_img.shape[0]  # 跟音訊長度有關
+        encoding_shape = encoded_img.shape[1]  # latent space 大小有關
         # minimun value of latent unit.
         min_value = torch.min(encoded_img)
 
-        for k in range(0, encoding_shape):
-            if(label[k] != source_idx):
+        for latent_node_idx in range(0, encoding_shape):
+            if label[latent_node_idx] != source_idx:
                 # deactivate neurons 
-                encoded_img[:,k] = min_value  # (encoding_shape,frame_num)
+                encoded_img[:, latent_node_idx] = min_value
         return encoded_img
 
+    def close_specific_latent_node(self, encoded_img, node_indices: list):
+        """
+        關閉特定 latent node，並回傳整張 encoded_img
+        """
+        latent_space_length = encoded_img[1]
+        min_value = torch.min(encoded_img)
+
+        for node_idx in node_indices:
+            # 要關閉的 idx 應該要在 0 ~ latent space range 內。
+            assert 0 <= node_idx < encoded_img.shape[1]
+
+        # 關閉指定的 index/indices.
+        for node_idx in range(0, latent_space_length):
+            if node_idx in node_indices:
+                encoded_img[:, node_idx] = min_value
+
+        return encoded_img
 
     def MFA(self, input, source_num=2):
         """
@@ -134,7 +151,7 @@ class MFA_source_separation(object):
         # MFA analysis for identifying latent neurons 's label
         label = self.MFA(latent_code.cpu().detach().numpy())
         # Reconstruct input
-        sources[0] = self.model.decoder(latent_code)
+        sources[0] = self.model.decoder(latent_code)  # 輸入維度: (音訊長度[音框], latent space)
         # Discriminate latent code for different sources.
         for source_idx in range(0, self.source_num):
             y_s = self.freq_modulation(source_idx, label, latent_code)
