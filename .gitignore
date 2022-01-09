@@ -1,3 +1,4 @@
+/src/matlab_script/README_HLsep.docx
 training_noisy_心肺/
 src/log/*
 src/senpai_data/
@@ -271,3 +272,4 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
