@@ -51,12 +51,13 @@ if __name__ == "__main__":
     # 原始無混 音源 A, B
     true_s1 = "./dataset/senpai_data/heart_lung_sam2/mix/training_clean_心跳/0dB/4_1.wav"
     true_s2 = "./dataset/senpai_data/heart_lung_sam2/mix/training_noise_呼吸/0dB/4_1.wav"
-    trur_s = [true_s1, true_s2]
+    trur_s = [true_s1, true_s2]  # [心, 肺]
 
     # 做盲源分離後的 分離源 對應於 A, B無混音源，有序 不得弄混
-    esti_s1 = "./log/DAE_C_2022_0109_2149_01/test_source1/4_1.wav"
-    esti_s2 = "./log/DAE_C_2022_0109_2149_01/test_source2/4_1.wav"
-    esti_s = [esti_s1, esti_s2]
+    esti_s1 = "./log/DAE_C_2022_0117_1238_28/test_source1/4_1.wav"  # 肺
+    esti_s2 = "./log/DAE_C_2022_0117_1238_28/test_source2/4_1.wav"  # 心
+    esti_s = [esti_s2, esti_s1]  # [心, 肺]
+    #esti_s = [esti_s1, esti_s2]  # [心, 肺]
 
     do_estimate(trur_s, esti_s)
 
