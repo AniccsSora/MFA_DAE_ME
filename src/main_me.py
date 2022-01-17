@@ -9,12 +9,15 @@ import numpy as np
 from model import DAE_C, DAE_F
 import train
 from source_separation import MFA
+from torch.utils.data import DataLoader
 from dataset.HLsep_dataloader import hl_dataloader, val_dataloader
 import scipy.io.wavfile as wav
 import os
 from os.path import join as pjoin
 import tester
 import logging
+import util_me as me
+from typing import List, Any
 logging.getLogger(__name__)
 
 # parser#
@@ -126,22 +129,33 @@ if args.cuda:
     torch.cuda.manual_seed(args.seed)
     net.cuda()
 
+
 if __name__ == "__main__":
 
     # data loader
-    #test_filelist = ["./dataset/4_1.wav"]
-    test_filelist = ["./dataset/4_1_5sec.wav"]
+    test_filelist = ["./dataset/4_1.wav"]
+    #test_filelist = ["./dataset/4_1_5sec.wav"]
     test_filename = test_filelist[0].split('/')[-1].split('.')[0]  # get pure-filename
     outdir = "{}/test_".format(args.logdir)
-    train_loader = hl_dataloader(test_filelist,
-                                 batch_size=args.batch_size,
-                                 shuffle=True,
-                                 num_workers=0,
-                                 pin_memory=False,
-                                 FFT_dict=FFT_dict,
-                                 args=args)
+    # train_loader = hl_dataloader(test_filelist,
+    #                              batch_size=args.batch_size,
+    #                              shuffle=True,
+    #                              num_workers=0,
+    #                              pin_memory=False,
+    #                              FFT_dict=FFT_dict,
+    #                              args=args)
+
+    train_loader: List[DataLoader[Any]]
+    train_loader = me.get_model_input_dataloader(test_filelist,
+                                                 shuffle=True,
+                                                 num_workers=0,
+                                                 pin_memory=False,
+                                                 FFT_dict=FFT_dict,
+                                                 args=args)
     # train
-    net = train.train(train_loader, net, args, logger)
+    net = train.train(train_loader[0], net, args, logger)
+
+
 
     # Source Separation by MFA analysis.
     mfa = MFA.MFA_source_separation(net, FFT_dict=FFT_dict, args=args)
