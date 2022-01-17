@@ -120,6 +120,20 @@ class MFA_source_separation(object):
 
         return k_labels
 
+    def rebuild_from_encodeImg(self, encode_img, save_path=None):
+        """
+
+        Args:
+            encode_img: latent space 的資料。
+            save_path: 聲音儲存路徑，如果為 None 就不儲存。
+        Returns:
+            重建後的聲音
+        """
+        res = self.model.decoder(encode_img)
+        if save_path is not None:
+            res  # TODO: 尚未實做
+
+        return res
 
     def source_separation(self, input, phase, mean, std, filedir, filename):
         """
