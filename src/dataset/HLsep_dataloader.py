@@ -40,7 +40,9 @@ class HL_dataset(Dataset):
 def hl_dataloader(data_path_list, batch_size=311, shuffle=False, num_workers=1, pin_memory=True, FFT_dict=None, args=None):
 
     hl_dataset = HL_dataset(data_path_list, FFT_dict, args)
-    hl_dataloader = DataLoader(hl_dataset, batch_size = batch_size, shuffle=False, num_workers=num_workers, pin_memory=True)
+    hl_dataloader = DataLoader(hl_dataset, batch_size=batch_size,
+                               shuffle=False, num_workers=num_workers,
+                               pin_memory=True, drop_last=False)
 
     return hl_dataloader
 
