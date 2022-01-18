@@ -37,13 +37,13 @@ def analysis_plot_neuron_representation(_1d_tensor, save_name, audio_total_sec, 
     ax.set_title("fft latent representation")
     _ = np.abs(np.fft.fft(_1d_tensor_short))  # 做一維傅立葉變換
     _ = np.log10(_)  # 取 log
-    plt.plot(_[:len(_)//2+1])
+    plt.plot(_[len(_)//2+1:])
 
     ax = plt.subplot(224)
     ax.set_title("fft latent representation (log2)")
     _ = np.abs(np.fft.fft(_1d_tensor_short_log2))
     _ = np.log10(_)
-    plt.plot(_[:len(_)//2+1])
+    plt.plot(_[len(_)//2+1:])
 
     #
     plt.tight_layout()
@@ -87,6 +87,7 @@ def analysis_latent_space_representation(net, dataloader):
                                             audio_total,
                                             audio_take_first
                                             )
+
 
     pass
 
