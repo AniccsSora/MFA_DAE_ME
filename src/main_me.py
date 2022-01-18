@@ -145,16 +145,20 @@ if __name__ == "__main__":
     #                              FFT_dict=FFT_dict,
     #                              args=args)
 
-    train_loader: List[DataLoader[Any]]
-    train_loader = me.get_model_input_dataloader(test_filelist,
-                                                 shuffle=True,
-                                                 num_workers=0,
-                                                 pin_memory=False,
-                                                 FFT_dict=FFT_dict,
-                                                 args=args)
+    train_loader_list: List[DataLoader[Any]]
+    train_loader_list = me.get_model_input_dataloader(test_filelist,
+                                                      shuffle=True,
+                                                      num_workers=0,
+                                                      pin_memory=False,
+                                                      FFT_dict=FFT_dict,
+                                                      args=args)
+    #
     # train
-    net = train.train(train_loader[0], net, args, logger)
+    #net = train.train(train_loader_list[0], net, args, logger)
+    net.load_state_dict(torch.load(r"./log/DAE_C_2022_0118_1423_18/latest.pt"))
 
+    #
+    me.analysis_latent_space_representation(net, train_loader_list[0])
 
 
     # Source Separation by MFA analysis.
