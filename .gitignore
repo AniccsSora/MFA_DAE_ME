@@ -273,3 +273,4 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+/src/matlab_script/Output_filename.png
