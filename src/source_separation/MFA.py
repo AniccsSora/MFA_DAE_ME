@@ -43,6 +43,8 @@ class MFA_source_separation(object):
         self.wienner_mask = args.wienner_mask
         self.FFT_dict = FFT_dict
         self.args = args
+        self.low_thersh_encode_img = None
+        self.high_thersh_encode_img = None
 
     def FFT_(self, input):
         epsilon = np.finfo(float).eps
@@ -171,13 +173,47 @@ class MFA_source_separation(object):
             y_s = self.freq_modulation(source_idx, label, latent_code)
             sources = torch.cat((sources, torch.unsqueeze(self.model.decoder(y_s), 0)), 0)
         sources = torch.squeeze(sources).permute(0, 2, 1).detach().cpu().numpy()
+
+        # 實行自己版本的 source seperation
+        # 取得從 decoder 回來的資料
+        my_sources = None  # 我自己的分離方法，產出的(命名概念源自於此程式 原有的source變數)
+        _ll = torch.unsqueeze(self.model.decoder(self.low_thersh_encode_img), 0)  # 取得自己弄得 latent matrix
+        _hh = torch.unsqueeze(self.model.decoder(self.high_thersh_encode_img), 0)
+        my_sources = _ll
+        my_sources = torch.cat((my_sources, _hh), 0)
+        my_sources = torch.squeeze(my_sources).permute(0, 2, 1).detach().cpu().numpy()  # 如法炮製
+
         # Source separation
         for source_idx in range(0, self.source_num+1):
             sources[source_idx, :, :] = np.sqrt(10**((sources[source_idx, :, :]*std[self.FFT_dict['frequency_bins'][0]:self.FFT_dict['frequency_bins'][1], :])+mean[self.FFT_dict['frequency_bins'][0]:self.FFT_dict['frequency_bins'][1], :]))
 
+        # 我自己的 XD: Source separation
+        for source_idx in range(len(my_sources)):
+            my_sources[source_idx, :, :] = np.sqrt(10**((my_sources[source_idx, :, :]*std[self.FFT_dict['frequency_bins'][0]:self.FFT_dict['frequency_bins'][1], :])+mean[self.FFT_dict['frequency_bins'][0]:self.FFT_dict['frequency_bins'][1], :]))
+
         # Inverse separated sources of log power spectrum to waveform.
         input = np.sqrt(10**(input*std+mean))
 
+        # 我自己的 XD: 最終 istft 並存檔案
+        for source_idx in range(len(my_sources)):
+            result = np.array(input)
+            if self.wienner_mask == True:
+                # 重新建立原始訊號
+                result[self.FFT_dict['frequency_bins'][0]:self.FFT_dict['frequency_bins'][1], :] = 2*(my_sources[source_idx, :, :]/(np.sum(my_sources[:, :, :], axis=0)))*sources[0, :, :]
+            else:
+                result[self.FFT_dict['frequency_bins'][0]:self.FFT_dict['frequency_bins'][1], :] = np.array(my_sources[source_idx, :, :])
+            #
+            R = np.multiply(result, phase)
+            result = librosa.istft(R, hop_length=self.FFT_dict['Hop_length'],
+                                   win_length=self.FFT_dict['Win_length'],
+                                   window=scipy.signal.hamming, center=False)
+            result = np.int16(result * 32768)
+            result_path = "{0}my_source{1}/".format(filedir, source_idx+1) # 我自己的沒有 0(原始訊號)
+            if not os.path.exists(result_path):
+                os.makedirs(result_path)
+            wav.write("{0}{1}.wav".format(result_path, filename), self.FFT_dict['sr'], result)
+
+        # 原始的重建
         for source_idx in range(0, self.source_num+1):
             Result = np.array(input)
             if(self.wienner_mask==True):
@@ -185,7 +221,7 @@ class MFA_source_separation(object):
                 if source_idx == 0:
                     Result[self.FFT_dict['frequency_bins'][0]:self.FFT_dict['frequency_bins'][1], :] = sources[0, :, :]
                 else:
-                    Result[self.FFT_dict['frequency_bins'][0]:self.FFT_dict['frequency_bins'][1], :] =  2*(sources[source_idx, :, :]/(np.sum(sources[1:, :, :], axis = 0)))*sources[0, :, :]
+                    Result[self.FFT_dict['frequency_bins'][0]:self.FFT_dict['frequency_bins'][1], :] = 2*(sources[source_idx, :, :]/(np.sum(sources[1:, :, :], axis = 0)))*sources[0, :, :]
             else:#Wienner_mask==False
                 Result[self.FFT_dict['frequency_bins'][0]:self.FFT_dict['frequency_bins'][1], :] = np.array(sources[source_idx, :, :])
             R = np.multiply(Result, phase)
