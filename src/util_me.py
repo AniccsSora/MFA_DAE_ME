@@ -19,20 +19,20 @@ def analysis_plot_neuron_representation(_1d_tensor, save_name, audio_total_sec, 
     # 計算 擷取占比
     _afp = audio_take_first/audio_total
 
-    _1d_tensor_log2 = np.log2(_1d_tensor)
+    _1d_tensor_log10 = np.log10(_1d_tensor)
 
     # 截斷後長度
     cut_length = int(len(_1d_tensor) * _afp)
     # 取得截斷版本
     _1d_tensor_short = _1d_tensor[0:cut_length]
-    _1d_tensor_short_log2 = _1d_tensor_log2[0:cut_length]
+    _1d_tensor_short_log10 = _1d_tensor_log10[0:cut_length]
 
     ax = plt.subplot(221)
     ax.set_title("latent representation")
     plt.plot(_1d_tensor_short)
     ax = plt.subplot(223)
-    ax.set_title("latent representation (log2)")
-    plt.plot(_1d_tensor_short_log2)
+    ax.set_title("latent representation (log10)")
+    plt.plot(_1d_tensor_short_log10)
 
     ax = plt.subplot(222)
     #ax.set_title("fft latent representation")
@@ -47,6 +47,7 @@ def analysis_plot_neuron_representation(_1d_tensor, save_name, audio_total_sec, 
     # _ = np.abs(np.fft.fft(_1d_tensor_short_odd_minus1))  # 做一維傅立葉變換 奇數idx 值*-1
 
     _ = np.abs(np.fft.fft(_1d_tensor_short))  # 做一維傅立葉變換
+    assert _.ndim == 1
     _freq = np.fft.fftfreq(_.size, d=8000)
     # _ = np.log10(_)  # ------------------------------------  取 log
     draw_val = _[1:len(_) // 2 + 1]  # 不使用 fft 第 0 個的數值
@@ -56,8 +57,8 @@ def analysis_plot_neuron_representation(_1d_tensor, save_name, audio_total_sec, 
     ax.set_title(f"fft latent representation, p={pick_vline}")
 
     ax = plt.subplot(224)
-    ax.set_title("fft latent representation (log2)")
-    _ = np.abs(np.fft.fft(_1d_tensor_short_log2))
+    ax.set_title("fft latent representation (log10)")
+    _ = np.abs(np.fft.fft(_1d_tensor_short_log10))
     # _ = np.log10(_)  # ------------------------------------  取 log
     plt.plot(_[1:len(_)//2+1])  # 不使用 fft 第 0 個的數值
 
@@ -76,6 +77,14 @@ def analysis_plot_neuron_representation(_1d_tensor, save_name, audio_total_sec, 
 
 
 def do_latent_representation_fft(node_representation, remove_first=True):
+    """
+    Args:
+        node_representation: latent space matrix.
+        remove_first: (default=True) 捨去fft後的第0個值(離散訊號的 fft 結果，第0個值通常不使用。)
+
+    Returns:
+        針對每個 row 做fft 的結果。
+    """
     _fft = np.fft.fft(node_representation, axis=1)
     res = np.abs(_fft)
     if remove_first:
@@ -84,8 +93,10 @@ def do_latent_representation_fft(node_representation, remove_first=True):
 
 def do_otsu_for_avg_fft_spectrum(avg_spectrum):
     """
-    回傳閥值
+    回傳 avg_spectrum 的閥值，實作取決於實際算法
     """
+    assert avg_spectrum.ndim == 1  # 資料必須是一維
+
     for _ in avg_spectrum:  # 數值必需在 0~255
         assert 0 < _ < 255  # 數值必需在 0~255
 
@@ -96,33 +107,100 @@ def do_otsu_for_avg_fft_spectrum(avg_spectrum):
     return ret
 
 def analysis_all_neuron_fft_avg(node_representation):
+    """
+
+    Args:
+        node_representation:
+            2維-的 latent space 的值，
+            矩陣高度為 latent neuron 數量，
+            矩陣寬度跟時間長度相關，時間越長寬度越長。
+
+    Returns:
+        所有神經元輸出，並獨自做fft，加總並平均的 spectrum。
+    """
     fft_res = do_latent_representation_fft(node_representation,
                                            remove_first=True)
     # 計算全node平均
     all_node_fft_sum = np.sum(fft_res, axis=0)
     _ = all_node_fft_sum / 2400.0
+    assert all_node_fft_sum.ndim == 1  # 因為下方使用 .size 作取值，這邊要小心。
     all_node_fft_avg = _[:all_node_fft_sum.size // 2 + 1]
 
+    # 這個 thres 是拿來畫在 fft 上的，不一定會用到。
     thres = do_otsu_for_avg_fft_spectrum(all_node_fft_avg)
-    print("threshold:", thres)
-    plt.plot(all_node_fft_avg)  # float
-    # plt.plot(for_otsu_dtype)  # uint8
-    plt.axvline(x=thres, color='red')
-    plt.show()
-    pass
+
+    DRAW_IT = False
+    if DRAW_IT:
+        print("threshold:", thres)
+        plt.plot(all_node_fft_avg)  # float
+        # plt.plot(for_otsu_dtype)  # uint8
+        plt.axvline(x=thres, color='red')
+        plt.show()
+
+    return all_node_fft_avg
 
 
-def otsu_analysis_for_latent_representation():
+def neuron_idx_classify(threshold, every_neuron_fft_peak):
+    high, mid, low = [], [], []
+    for idx, peak in enumerate(every_neuron_fft_peak):
+        if peak > threshold:
+            high.append(idx)
+        elif peak < threshold:
+            low.append(idx)
+        else:
+            mid.append(idx)
+    assert len(high) + len(low) + len(mid) == every_neuron_fft_peak.size
+
+    return high, mid, low
+
+def seperate_latent_representation(node_representation, threshold):
     """ 
-    取得一張 latent matrix
-    針對 他的每個node做FFT，並加總平均這些統計圖(frequcy domain)
-    做 otsu 並得到閥值
+    取得一張 node_representation (高度為 neuron 數量，寬度大小跟 時間有關)
+    針對 他的每個node做FFT，並加總平均這些統計圖(frequency domain)
+    做 根據閥值 (或者說 position)
     小於閥值的畫成一張 latent matrix :A
     大於閥值的畫成一張 latent matrix :B
-    retrun A,B
+    return  (A,B)  兩張大小一樣的 latent matrix
     """
+    #
+    fft_res = do_latent_representation_fft(node_representation,
+                                           remove_first=True)
+    fft_res = fft_res[:, :fft_res.shape[1]//2+1]  # 取半
 
-    pass
+    # 取得每一個 neuron 的 fft pick 數值
+    every_neuron_fft_peak = np.array([np.argmax(_) for _ in fft_res])
+
+    # 高於閥值的與低於閥值的 idx 分開。
+    low_idx, mid_idx, high_idx = neuron_idx_classify(threshold, every_neuron_fft_peak)
+
+    # 決定 mid_idx 到底要分為高 or 低，預設視為低。
+    mid_idx_is_low = True
+
+    if mid_idx_is_low:
+        low_idx += mid_idx
+    else:
+        high_idx += mid_idx
+
+    min_value = np.min(node_representation)  # 基本上是 0
+
+    # 回傳的
+    low_latent_image, high_latent_image = None, None
+
+    latent_copy_ = np.copy(node_representation)
+    # 先處理 小於 閥值的
+    for idx in range(latent_copy_.shape[0]):
+        if idx in low_idx:
+            latent_copy_[idx] = min_value
+    low_latent_image = np.copy(latent_copy_)
+
+    latent_copy_ = np.copy(node_representation)
+    # 處理 大於 閥值的
+    for idx in range(latent_copy_.shape[0]):
+        if idx in high_idx:
+            latent_copy_[idx] = min_value
+    high_latent_image = np.copy(latent_copy_)
+
+    return low_latent_image, high_latent_image
 
 def analysis_latent_space_representation(net, dataloader):
     encoder = net.encoder
@@ -143,9 +221,6 @@ def analysis_latent_space_representation(net, dataloader):
     eps_ = np.finfo(float).eps  # 取得系統最小值
     node_representation[node_representation == 0] = eps_  # 取代最小值
 
-    # prof. 分析
-    analysis_all_neuron_fft_avg(node_representation)
-
     audio_total = 10  # 音源總長度
     audio_take_first = 10  # 擷取前面的 n秒 做分析
     print(f"音源全長 {audio_total} 秒, 採前面 {audio_take_first} 秒 作分析")
@@ -156,9 +231,37 @@ def analysis_latent_space_representation(net, dataloader):
                                             audio_total,
                                             audio_take_first
                                             )
-
-
     pass
+
+
+def get_binearlization_latent_matrix(net, dataloader):
+    encoder = net.encoder
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    if torch.cuda.is_available():
+        net.cuda(device)
+
+    latent_matrix = None
+    for data in dataloader:
+        latent_code = encoder(data.to(device, dtype=torch.float))
+        if latent_matrix is None:
+            latent_matrix = latent_code
+        else:
+            latent_matrix = torch.cat((latent_matrix, latent_code), axis=0)
+
+    # 讓 latent neuron 數量 成為 矩陣高度。
+    node_representation = latent_matrix.T.detach().cpu().numpy()
+    eps_ = np.finfo(float).eps  # 取得系統最小值
+    node_representation[node_representation == 0] = eps_  # 取代最小值
+
+    # 分析 latent matrix 的所有 neuron 的 fft 平均值。
+    latent_matrix_fft_avg_spectrogram = analysis_all_neuron_fft_avg(node_representation)
+    # 計算 otsu 閥值
+    threshold_position = do_otsu_for_avg_fft_spectrum(latent_matrix_fft_avg_spectrogram)
+
+    low, high = seperate_latent_representation(node_representation, threshold_position)
+
+    return low, high
+
 
 def get_model_input_dataloader(audio_list: List,
                                shuffle: bool,
