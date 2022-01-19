@@ -154,15 +154,21 @@ if __name__ == "__main__":
                                                       args=args)
     #
     # train
-    #net = train.train(train_loader_list[0], net, args, logger)
-    net.load_state_dict(torch.load(r"./log/DAE_C_2022_0118_1423_18/latest.pt"))
+    net = train.train(train_loader_list[0], net, args, logger)
+    #net.load_state_dict(torch.load(r"./log/DAE_C_2022_0118_1423_18/latest.pt"))
 
-    #
-    me.analysis_latent_space_representation(net, train_loader_list[0])
+    # 這個會繪製 每個 neuron 的值與 fft 輸出。
+    # me.analysis_latent_space_representation(net, train_loader_list[0])
 
 
     # Source Separation by MFA analysis.
     mfa = MFA.MFA_source_separation(net, FFT_dict=FFT_dict, args=args)
+
+    # 用自己分析 latent matrix
+    l, h = me.get_binearlization_latent_matrix(net, train_loader_list[0])
+    mfa.low_thersh_encode_img = torch.tensor(l.T, device='cuda')
+    mfa.high_thersh_encode_img = torch.tensor(h.T, device='cuda')
+
     for test_file in test_filelist:
         # load test data
         lps, phase, mean, std = val_dataloader(test_file, FFT_dict)
