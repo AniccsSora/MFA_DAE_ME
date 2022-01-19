@@ -54,10 +54,10 @@ if __name__ == "__main__":
     trur_s = [true_s1, true_s2]  # [心, 肺]
 
     # 做盲源分離後的 分離源 對應於 A, B無混音源，有序 不得弄混
-    esti_s1 = "./log/DAE_C_2022_0117_1238_28/test_source1/4_1.wav"  # 肺
-    esti_s2 = "./log/DAE_C_2022_0117_1238_28/test_source2/4_1.wav"  # 心
-    esti_s = [esti_s2, esti_s1]  # [心, 肺]
-    #esti_s = [esti_s1, esti_s2]  # [心, 肺]
+    esti_s1 = "./log/DAE_C_2022_0120_0145_37/test_my_source1/4_1.wav"
+    esti_s2 = "./log/DAE_C_2022_0120_0145_37/test_my_source0/4_1.wav"
+    #esti_s = [esti_s2, esti_s1]  # [心, 肺]
+    esti_s = [esti_s1, esti_s2]  # [心, 肺]
 
     do_estimate(trur_s, esti_s)
 
