@@ -15,7 +15,7 @@ exp_path = '.\exp_fig\';
 % school_windows='D:\git-repo'
 prj_path="D:\git-repo";  % 專案位置  //linux : /home/user/git-repo,  
 % ---------------------------------------------------------------
-timestamp_foldern='DAE_C_2022_0120_0150_52'; % log 下 時戳資料夾名
+timestamp_foldern='DAE_C_2022_0120_1318_27'; % log 下 時戳資料夾名
 %
 origin_path=fullfile(prj_path,'MFA_DAE_ME','src','dataset'); % 無損 source 根目錄
 % 重建後音源
