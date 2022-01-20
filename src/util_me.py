@@ -106,7 +106,7 @@ def do_otsu_for_avg_fft_spectrum(avg_spectrum):
 
     return ret
 
-def analysis_all_neuron_fft_avg(node_representation):
+def get_all_neuron_fft_avg(node_representation):
     """
 
     Args:
@@ -140,20 +140,20 @@ def analysis_all_neuron_fft_avg(node_representation):
     return all_node_fft_avg
 
 
-def neuron_idx_classify(threshold, every_neuron_fft_peak):
+def neuron_idx_classify(threshold, every_neuron_fft_peak, delta=0.0):
     high, mid, low = [], [], []
     for idx, peak in enumerate(every_neuron_fft_peak):
-        if peak > threshold:
+        if peak > threshold+delta:
             high.append(idx)
-        elif peak < threshold:
+        elif peak < threshold-(delta):
             low.append(idx)
         else:
             mid.append(idx)
     assert len(high) + len(low) + len(mid) == every_neuron_fft_peak.size
-
+    print(f"低於閥值: {len(low)} 個, 高於閥值: {len(high)} 個")
     return high, mid, low
 
-def seperate_latent_representation(node_representation, threshold):
+def seperate_latent_representation(node_representation, threshold, delta=0.0):
     """ 
     取得一張 node_representation (高度為 neuron 數量，寬度大小跟 時間有關)
     針對 他的每個node做FFT，並加總平均這些統計圖(frequency domain)
@@ -171,15 +171,21 @@ def seperate_latent_representation(node_representation, threshold):
     every_neuron_fft_peak = np.array([np.argmax(_) for _ in fft_res])
 
     # 高於閥值的與低於閥值的 idx 分開。
-    low_idx, mid_idx, high_idx = neuron_idx_classify(threshold, every_neuron_fft_peak)
+    low_idx, mid_idx, high_idx = neuron_idx_classify(threshold,
+                                                     every_neuron_fft_peak,
+                                                     delta=delta)
 
     # 決定 mid_idx 到底要分為高 or 低，預設視為低。
     mid_idx_is_low = True
+    process_mid = False  # mid 是否加到任意一邊
 
-    if mid_idx_is_low:
-        low_idx += mid_idx
+    if process_mid:
+        if mid_idx_is_low:
+            low_idx += mid_idx
+        else:
+            high_idx += mid_idx
     else:
-        high_idx += mid_idx
+        pass  # mid 不會被加到任意一邊
 
     min_value = np.min(node_representation)  # 基本上是 0
 
@@ -199,6 +205,18 @@ def seperate_latent_representation(node_representation, threshold):
         if idx in high_idx:
             latent_copy_[idx] = min_value
     high_latent_image = np.copy(latent_copy_)
+
+    # 不處理 mid 狀態 就要把他們都關閉
+    if not process_mid:
+        # 先處理 小於 閥值的
+        for idx in range(low_latent_image.shape[0]):
+            if idx in mid_idx:
+                low_latent_image[idx] = min_value
+        # 先處理 大於 閥值的
+        for idx in range(high_latent_image.shape[0]):
+            if idx in mid_idx:
+                high_latent_image[idx] = min_value
+
 
     return low_latent_image, high_latent_image
 
@@ -234,7 +252,7 @@ def analysis_latent_space_representation(net, dataloader):
     pass
 
 
-def get_binearlization_latent_matrix(net, dataloader):
+def get_node_representation(net, dataloader):
     encoder = net.encoder
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     if torch.cuda.is_available():
@@ -253,15 +271,50 @@ def get_binearlization_latent_matrix(net, dataloader):
     eps_ = np.finfo(float).eps  # 取得系統最小值
     node_representation[node_representation == 0] = eps_  # 取代最小值
 
+    return node_representation
+
+
+def get_avg_fft_spectrum(net, dataloader):
+    """
+    Returns: 經過加權平均後的所有 latent neuron 的 spectrum
+    """
+    node_representation = get_node_representation(net, dataloader)
+
     # 分析 latent matrix 的所有 neuron 的 fft 平均值。
-    latent_matrix_fft_avg_spectrogram = analysis_all_neuron_fft_avg(node_representation)
+    latent_matrix_fft_avg_spectrogram = get_all_neuron_fft_avg(node_representation)
+
+    return latent_matrix_fft_avg_spectrogram
+
+def get_binearlization_latent_matrix(net, dataloader):
+    
+    # 分析 latent matrix 的所有 neuron 的 fft 平均值。
+    latent_matrix_fft_avg_spectrogram = get_avg_fft_spectrum(net, dataloader)
     # 計算 otsu 閥值
     threshold_position = do_otsu_for_avg_fft_spectrum(latent_matrix_fft_avg_spectrogram)
-
-    low, high = seperate_latent_representation(node_representation, threshold_position)
+    print("threshold_position:", threshold_position)
+    #
+    node_representation = get_node_representation(net, dataloader)
+    #
+    low, high = seperate_latent_representation(node_representation,
+                                               threshold_position,
+                                               delta=0)
 
     return low, high
 
+
+def get_binearlization_latent_matrix_by_fix_threshold(net, dataloader, thres):
+    node_representation = get_node_representation(net, dataloader)
+
+    low, high = seperate_latent_representation(node_representation, thres)
+
+    return low, high
+
+def plot_avg_fft(net, dataloader):
+    spec = get_avg_fft_spectrum(net, dataloader)
+    plt.plot(spec[:50])
+    plt.axvline(x=4, color='red')
+    plt.show()
+    pass
 
 def get_model_input_dataloader(audio_list: List,
                                shuffle: bool,

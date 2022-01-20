@@ -44,7 +44,8 @@ parser.add_argument('--decreasing_lr', default='200,250', help='decreasing strat
 parser.add_argument('--source_num', type=int, default=3, help='number of separated sources')
 parser.add_argument('--clustering_alg', type=str, default='NMF', choices=['NMF', 'K_MEANS'], help='clustering algorithm for embedding space')
 parser.add_argument('--wienner_mask', type=bool, default=True, help='wienner time-frequency mask for output')
-
+#
+parser.add_argument('--fix_thres', type=int, default=-1)
 args = parser.parse_args()
 args.cuda = torch.cuda.is_available()
 #  misc.logger.init(args.logdir, 'train_log_')  # 拒用
@@ -133,7 +134,8 @@ if args.cuda:
 if __name__ == "__main__":
 
     # data loader
-    test_filelist = ["./dataset/4_1.wav"]
+    #test_filelist = ["./dataset/4_1.wav"]
+    test_filelist = ["./dataset/senpai_data/heart_lung_sam2/mix/training_noise_呼吸/0dB/4_1.wav"]
     #test_filelist = ["./dataset/4_1_5sec.wav"]
     test_filename = test_filelist[0].split('/')[-1].split('.')[0]  # get pure-filename
     outdir = "{}/test_".format(args.logdir)
@@ -155,17 +157,24 @@ if __name__ == "__main__":
     #
     # train
     net = train.train(train_loader_list[0], net, args, logger)
-    #net.load_state_dict(torch.load(r"./log/DAE_C_2022_0118_1423_18/latest.pt"))
+    #net.load_state_dict(torch.load(r"./log/DAE_C_2022_0120_0150_52/latest.pt"))
 
     # 這個會繪製 每個 neuron 的值與 fft 輸出。
     # me.analysis_latent_space_representation(net, train_loader_list[0])
 
+    # 繪製 加權平均 fft
+    me.plot_avg_fft(net, train_loader_list[0])
 
     # Source Separation by MFA analysis.
     mfa = MFA.MFA_source_separation(net, FFT_dict=FFT_dict, args=args)
 
     # 用自己分析 latent matrix
     l, h = me.get_binearlization_latent_matrix(net, train_loader_list[0])
+    # 使用固定 thres
+    # fix_thres = 4  # args.fix_thres
+    # l, h = me.get_binearlization_latent_matrix_by_fix_threshold(net, train_loader_list[0], fix_thres)
+
+    #
     mfa.low_thersh_encode_img = torch.tensor(l.T, device='cuda')
     mfa.high_thersh_encode_img = torch.tensor(h.T, device='cuda')
 
