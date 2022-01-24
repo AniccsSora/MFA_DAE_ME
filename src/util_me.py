@@ -142,13 +142,20 @@ def get_all_neuron_fft_avg(node_representation):
 
 def neuron_idx_classify(threshold, every_neuron_fft_peak, delta=0.0):
     high, mid, low = [], [], []
+    print("this is 棄用方法。")
     for idx, peak in enumerate(every_neuron_fft_peak):
+        # if peak > threshold+delta:
+        #     high.append(idx)
+        # elif peak < threshold-(delta):
+        #     low.append(idx)
+        # else:
+        #     mid.append(idx)
+        # 棄用
         if peak > threshold+delta:
             high.append(idx)
-        elif peak < threshold-(delta):
-            low.append(idx)
         else:
-            mid.append(idx)
+            low.append(idx)
+
     assert len(high) + len(low) + len(mid) == every_neuron_fft_peak.size
     print(f"低於閥值: {len(low)} 個, 高於閥值: {len(high)} 個")
     return high, mid, low
@@ -162,6 +169,8 @@ def seperate_latent_representation(node_representation, threshold, delta=0.0):
     大於閥值的畫成一張 latent matrix :B
     return  (A,B)  兩張大小一樣的 latent matrix
     """
+    if delta != 0.0:
+        print(f"[warn]: delta={delta}")
     #
     fft_res = do_latent_representation_fft(node_representation,
                                            remove_first=True)
@@ -312,7 +321,7 @@ def get_binearlization_latent_matrix_by_fix_threshold(net, dataloader, thres):
 def plot_avg_fft(net, dataloader):
     spec = get_avg_fft_spectrum(net, dataloader)
     plt.plot(spec[:50])
-    plt.axvline(x=4, color='red')
+    plt.axvline(x=15, color='red')
     plt.show()
     pass
 

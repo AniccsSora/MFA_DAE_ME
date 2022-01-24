@@ -18,6 +18,8 @@ import tester
 import logging
 import util_me as me
 from typing import List, Any
+from LatentAnalyzer import LatentAnalyzer
+
 logging.getLogger(__name__)
 
 # parser#
@@ -116,9 +118,9 @@ model_dict = {
 FFT_dict = {
     'sr': 8000,
     'frequency_bins': [0, 300],
-    'FFTSize': 2048,
-    'Hop_length': 128,
-    'Win_length': 2048,
+    'FFTSize': 2048,  # 2048
+    'Hop_length': 128,  # 128
+    'Win_length': 2048,  # 2048
     'normalize': True,
 }
 # declare model object
@@ -134,8 +136,9 @@ if args.cuda:
 if __name__ == "__main__":
 
     # data loader
-    #test_filelist = ["./dataset/4_1.wav"]
-    test_filelist = ["./dataset/senpai_data/heart_lung_sam2/mix/training_noise_呼吸/0dB/4_1.wav"]
+    # test_filelist = ["./dataset/4_1.wav"]
+    #test_filelist = ["./dataset/senpai_data/heart_lung_sam2/mix/training_noise_呼吸/0dB/4_1.wav"]
+    test_filelist = ["./dataset/senpai_data/heart_lung_sam2/mix/training_noisy_心肺/6dB/3_0.wav"]
     #test_filelist = ["./dataset/4_1_5sec.wav"]
     test_filename = test_filelist[0].split('/')[-1].split('.')[0]  # get pure-filename
     outdir = "{}/test_".format(args.logdir)
@@ -156,23 +159,38 @@ if __name__ == "__main__":
                                                       args=args)
     #
     # train
-    net = train.train(train_loader_list[0], net, args, logger)
-    #net.load_state_dict(torch.load(r"./log/DAE_C_2022_0120_0150_52/latest.pt"))
+    #net = train.train(train_loader_list[0], net, args, logger)
+    net.load_state_dict(torch.load(r"./log/DAE_C_2022_0124_1841_07/latest.pt"))
+
+    # 全新物件，全新感受
+    LA = LatentAnalyzer(net, train_loader_list[0],
+                        audio_length=10, audio_analysis_used=10)
 
     # 這個會繪製 每個 neuron 的值與 fft 輸出。
     # me.analysis_latent_space_representation(net, train_loader_list[0])
+    # LA.plot_all_neuron_fft_representation()
 
     # 繪製 加權平均 fft
-    me.plot_avg_fft(net, train_loader_list[0])
+    LA.fft_plot_length = 150
+    LA.plot_avg_fft(plot_otsu=True, plot_axvline=0)
 
     # Source Separation by MFA analysis.
     mfa = MFA.MFA_source_separation(net, FFT_dict=FFT_dict, args=args)
 
     # 用自己分析 latent matrix
-    l, h = me.get_binearlization_latent_matrix(net, train_loader_list[0])
+    #l, h = me.get_binearlization_latent_matrix(net, train_loader_list[0])
     # 使用固定 thres
-    # fix_thres = 4  # args.fix_thres
-    # l, h = me.get_binearlization_latent_matrix_by_fix_threshold(net, train_loader_list[0], fix_thres)
+    #fix_thres = 16-5  # args.fix_thres
+    #l, h = me.get_binearlization_latent_matrix_by_fix_threshold(net, train_loader_list[0], fix_thres)
+
+    # 用自己分析 latent matrix，新版
+    # l, h = LA.get_binearlization_latent_matrix()
+    # 使用固定 thres
+    fix_thres = LA.get_otsu_threshold()
+    l, h = LA.get_binearlization_latent_matrix_by_fix_threshold(fix_thres,
+                                                                delta=4,
+                                                                plot=True,
+                                                                plot_otsu=True)
 
     #
     mfa.low_thersh_encode_img = torch.tensor(l.T, device='cuda')
