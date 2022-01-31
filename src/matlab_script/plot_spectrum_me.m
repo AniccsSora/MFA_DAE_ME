@@ -10,51 +10,51 @@ shift=0;
 shrink=0;
 exp_path = '.\exp_fig\';
 
-%---- ¸ô®|³]©w
+%---- è·¯å¾‘è¨­å®š
 % home_windows ='D:\Git'
 % school_windows='D:\git-repo'
-prj_path="D:\git-repo";  % ±M®×¦ì¸m  //linux : /home/user/git-repo,  
+prj_path="D:\Git";  % å°ˆæ¡ˆä½ç½®  //linux : /home/user/git-repo,  
 % ---------------------------------------------------------------
-timestamp_foldern='DAE_C_2022_0124_1629_02'; % log ¤U ®ÉÂW¸ê®Æ§¨¦W
+timestamp_foldern='DAE_C_2022_0128_1612_38'; % log ä¸‹ æ™‚æˆ³è³‡æ–™å¤¾å
 %
-origin_path=fullfile(prj_path,'MFA_DAE_ME','src','dataset'); % µL·l source ®Ú¥Ø¿ı
-% ­««Ø«á­µ·½
+origin_path=fullfile(prj_path,'MFA_DAE_ME','src','dataset'); % ç„¡æ source æ ¹ç›®éŒ„
+% é‡å»ºå¾ŒéŸ³æº
 recons_path=fullfile(prj_path,'MFA_DAE_ME','src','log',timestamp_foldern,'test_reconstruct');
-s1_path=fullfile(prj_path,'MFA_DAE_ME','src','log',timestamp_foldern,'test_my_source1'); % test_my_source1, test_source1
-s2_path=fullfile(prj_path,'MFA_DAE_ME','src','log',timestamp_foldern,'test_my_source2'); % test_my_source2, test_source2
+s1_path=fullfile(prj_path,'MFA_DAE_ME','src','log',timestamp_foldern,'test_source1'); % test_my_source1, test_source1
+s2_path=fullfile(prj_path,'MFA_DAE_ME','src','log',timestamp_foldern,'test_source2'); % test_my_source2, test_source2
 s3_path=fullfile(prj_path,'MFA_DAE_ME','src','log',timestamp_foldern,'test_source3');
-lab_dir_name='';  % ¤ñ·Ó python ¤ºªº lab_dir_name ¸ê®Æ§¨ÅÜ¼Æ¡A¦p¨S³]©w¥i¥H¬°ªÅ
+lab_dir_name='';  % æ¯”ç…§ python å…§çš„ lab_dir_name è³‡æ–™å¤¾è®Šæ•¸ï¼Œå¦‚æ²’è¨­å®šå¯ä»¥ç‚ºç©º
 
-origin=fullfile(origin_path, '3_0.wav'); % ­««Ø¥X¨Óªº wav name
-recons=fullfile(recons_path, lab_dir_name, '3_0.wav');
-source1 =fullfile(s1_path, lab_dir_name,'3_0.wav');
-source2 =fullfile(s2_path, lab_dir_name,'3_0.wav');
-source3 =fullfile(s3_path, lab_dir_name,'3_0.wav');
+origin=fullfile(origin_path, '4_1.wav'); % é‡å»ºå‡ºä¾†çš„ wav name
+recons=fullfile(recons_path, lab_dir_name, '4_1.wav');
+source1 =fullfile(s1_path, lab_dir_name,'4_1.wav');
+source2 =fullfile(s2_path, lab_dir_name,'4_1.wav');
+source3 =fullfile(s3_path, lab_dir_name,'4_1.wav');
 
-%%% ¤£«÷¸ô®|¡A¤Ïµù¸Ñ¡C
+%%% ä¸æ‹¼è·¯å¾‘ï¼Œåè¨»è§£ã€‚
 % recons= "/home/user/git-repo/MFA_DAE_20210904_fft/test/_wavresult/reconstruct/test.wav";
 % source1="/home/user/git-repo/MFA_DAE_20210904_fft/test/_wavresult/source1/test.wav";
 % source2 ="/home/user/git-repo/MFA_DAE_20210904_fft/test/_wavresult/source2/test.wav";
 % source3 ="/home/user/git-repo/MFA_DAE_20210904_fft/test/_wavresult/reconstruct/test.wav";
 
-source4 = 'D:\Git\qpzm_mfa_dae\src\log\MFA_ANA\test_source4\0_0_w_off\4_0_0_old_method_Ãö³¬wienner_mask_PR20.wav';
+source4 = 'D:\Git\qpzm_mfa_dae\src\log\MFA_ANA\test_source4\0_0_w_off\4_0_0_old_method_é—œé–‰wienner_mask_PR20.wav';
 
 my_fig_title='4\_1'; % use class 3
 
 FontSize = 18;
-%  [0.01 0.07 0.98 0.82] ³Ì¨Î¿Ã¹õ¸õ¥XÅã¥Ü®ÄªG
-figure('visible','on','units','normalized','Position', [0.0,0.1,0.97,0.75]);  % ¥ª¤U(¥ª¤U¬°0) µøµ¡¦ì¸m(a b)¡B (¼e °ª)
+%  [0.01 0.07 0.98 0.82] æœ€ä½³è¢å¹•è·³å‡ºé¡¯ç¤ºæ•ˆæœ
+figure('visible','on','units','normalized','Position', [0.0,0.1,0.97,0.75]);  % å·¦ä¸‹(å·¦ä¸‹ç‚º0) è¦–çª—ä½ç½®(a b)ã€ (å¯¬ é«˜)
 %---------------------------------------------------------
-% Ã¸»s­ì©lªºÀWÃĞ
+% ç¹ªè£½åŸå§‹çš„é »è­œ
 subplot(231);
 [CleanSpec,sig] = wav2spec(origin);
-%h_pc=imagesc(sqrt(CleanSpec(1:65,:)/std(sig))); %¥¿³W¤ÆÀWÃĞ? 1000~2000
-h_pc=imagesc(sqrt(CleanSpec(1:129,:)/std(sig))); %¥¿³W¤ÆÀWÃĞ? 1000~2000
+%h_pc=imagesc(sqrt(CleanSpec(1:65,:)/std(sig))); %æ­£è¦åŒ–é »è­œ? 1000~2000
+h_pc=imagesc(sqrt(CleanSpec(1:129,:)/std(sig))); %æ­£è¦åŒ–é »è­œ? 1000~2000
 title(gca,"origin");
 colormap Jet;axis xy;
 
 set(gca, 'CLim', [1,119]);%frequency band
-% ÀWÃĞ y¶b 
+% é »è­œ yè»¸ 
 set(gca, 'YTick',[0,64,129]);
 set(gca,'YTickLabel',{'0','500','1000'});
 set(gca, 'XTick',[1,2468,4936]);
@@ -64,15 +64,15 @@ ylabel('Frequency (Hz)','fontsize',FontSize,'Fontname','Times New Roman');
 %xlabel({'Time(sec)'},'fontsize',FontSize,'Fontname','Times New Roman');
 %set(gcf,'Position',[100 100 260 220]);
 %---------------------------------------------------------
-% Ã¸»s­««ØªºÀWÃĞ
+% ç¹ªè£½é‡å»ºçš„é »è­œ
 subplot(232);
 [CleanSpec,sig] = wav2spec(recons);
-h_pc=imagesc(sqrt(CleanSpec(1:129,:)/std(sig))); %¥¿³W¤ÆÀWÃĞ?
+h_pc=imagesc(sqrt(CleanSpec(1:129,:)/std(sig))); %æ­£è¦åŒ–é »è­œ?
 title(gca,"reconstruction");
 colormap Jet;axis xy;
 
 set(gca, 'CLim', [1,120]);%frequency band
-% ÀWÃĞ y¶b 
+% é »è­œ yè»¸ 
 set(gca, 'YTick',[0,64,129]);
 set(gca,'YTickLabel',{'0','500','1000'});
 set(gca, 'XTick',[1,2468,4936]);
@@ -84,12 +84,12 @@ set(gca,'FontWeight','bold','fontsize',FontSize,'Fontname','Times New Roman');
 %---------------------------------------------------------
 subplot(234);
 [CleanSpec,sig] = wav2spec(source1);
-h_pc=imagesc(sqrt(CleanSpec(1:129,:)/std(sig))); %¥¿³W¤ÆÀWÃĞ?
+h_pc=imagesc(sqrt(CleanSpec(1:129,:)/std(sig))); %æ­£è¦åŒ–é »è­œ?
 title(gca,"source 1");
 colormap Jet;axis xy;
 
 set(gca, 'CLim', [1,120]);%frequency band
-% ÀWÃĞ y¶b 
+% é »è­œ yè»¸ 
 set(gca, 'YTick',[0,64,129]);
 set(gca,'YTickLabel',{'0','500','1000'});
 set(gca, 'XTick',[1,2468,4936]);
