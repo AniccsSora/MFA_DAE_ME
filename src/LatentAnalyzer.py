@@ -140,6 +140,20 @@ class LatentAnalyzer:
         assert all_node_fft_sum.ndim == 1  # 因為下方使用 .size 作取值，這邊要小心。
         all_node_fft_avg = _[:all_node_fft_sum.size // 2 + 1]
 
+        return all_node_fft_avg
+
+    def _get_plot_neuron_fft_avg(self):
+        """
+        Returns: 要拿來繪製的 fft signal，回傳不特定長度
+        (內容為所有神經元輸出，並獨自做fft，加總並平均的 spectrum。)
+        """
+        fft_res = self._do_latent_representation_fft(remove_first=True)
+        # 計算全node平均
+        all_node_fft_sum = np.sum(fft_res, axis=0)
+        _ = all_node_fft_sum / 2400.0
+        assert all_node_fft_sum.ndim == 1  # 因為下方使用 .size 作取值，這邊要小心。
+        all_node_fft_avg = _[:all_node_fft_sum.size // 2 + 1]
+
         if isinstance(self.fft_plot_length, str):
             assert self.fft_plot_length.lower() == 'all'
         else:
@@ -148,7 +162,6 @@ class LatentAnalyzer:
 
         return all_node_fft_avg
 
-
     def plot_avg_fft(self, plot_otsu=True, plot_axvline=0.0):
 
         # 這個 thres 是拿來畫在 fft 上的，不一定會用到。
@@ -156,7 +169,8 @@ class LatentAnalyzer:
 
         print("otsu threshold:", thres)
         plt.title(f"Latent layer neuron fft avg (otsu threshold: {thres})")
-        plt.plot(self._get_all_neuron_fft_avg())  # float
+        plt.plot(self._get_plot_neuron_fft_avg())  # float
+        plt.xlim(1, len(self._get_plot_neuron_fft_avg()))
         # plt.plot(for_otsu_dtype)  # uint8
         if plot_otsu:
             plt.axvline(x=thres, color='green', alpha=0.5)
@@ -173,8 +187,8 @@ class LatentAnalyzer:
         """
         assert avg_spectrum.ndim == 1  # 資料必須是一維
 
-        for _ in avg_spectrum:  # 數值必需在 0~255
-            assert 0 < _ < 255  # 數值必需在 0~255
+        for _ in avg_spectrum:
+            assert 0 < _ < 255  # 數值必需在 0~255，因為 cv2 的算法只支援到 uint8
 
         for_otsu_dtype = np.array(avg_spectrum, dtype=np.uint8)
 
@@ -241,7 +255,7 @@ class LatentAnalyzer:
             delta=delta)
 
         if plot:
-            sp = self._get_all_neuron_fft_avg()
+            sp = self._get_plot_neuron_fft_avg()
             plt.plot(sp)
             plt.axvline(x=fix_thres, color='red', alpha=0.5)
             if delta != 0.0:
