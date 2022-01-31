@@ -2,6 +2,7 @@ import numpy as np
 from torch.utils.data import DataLoader
 from dataset.HLsep_dataloader import hl_dataloader
 from typing import List, Dict, Any, AnyStr
+from scipy.signal import peak_prominences, find_peaks, find_peaks_cwt
 import torch
 import matplotlib.pyplot as plt
 import os
@@ -24,6 +25,8 @@ class LatentAnalyzer:
         self.encoder = None
         self.node_representation = None
         self.fft_plot_length = 'all'
+        # ---------------------  static 表示 特殊靜態變數，如要安全取用，請呼叫他的更新
+        self.__static_all_neuron_fft_avg_ = None
         # --------------------- (最後/其他)初始化
         self._finally_init()
         # --------------------- instance attribute assignment
@@ -170,7 +173,7 @@ class LatentAnalyzer:
         print("otsu threshold:", thres)
         plt.title(f"Latent layer neuron fft avg (otsu threshold: {thres})")
         _draw_target = self._get_plot_neuron_fft_avg()
-        plt.plot()  # float
+        plt.plot(_draw_target)  # float
         plt.xlim(1, len(_draw_target))
         # plt.plot(for_otsu_dtype)  # uint8
         if plot_otsu:
@@ -345,3 +348,63 @@ class LatentAnalyzer:
 
         return low_latent_image, high_latent_image
 
+    def _plot_signal_peak(self, show_all_peaks=True):
+        """
+        Returns: 分析 neuron 的 訊號突出點，並返回
+        """
+        # peak_prominences()  # 計算峰值的突出度
+        # find_peaks()  # 尋找波峰
+        signal = self._get_static_all_neuron_fft_avg_(update=True)
+
+        # 這會找到很多波峰，全部凸的都會出來
+        # peaks_idx = find_peaks_cwt(signal, widths=1)  # widths 感興趣的峰值寬度
+        peaks_idx, _ = find_peaks(signal,
+                                  distance=5,  # peaks 間最小距離
+                                  height=0)  # height= ([最小高度], [最大高度])
+        prominences = peak_prominences(signal, peaks_idx)[0]  # 計算突出值
+        contour_heights = signal[peaks_idx] - prominences  # 突出線條
+        plt.title("Filter Peaks show")
+        plt.plot(signal)
+        # plt.vlines(x=peaks_idx, ymin=contour_heights, ymax=signal[peaks_idx])
+        new_peaks_idx, _ = self._calc_most_height_peaks((peaks_idx, prominences))
+        plt.plot(peaks_idx, signal[peaks_idx], ".", alpha=.3)   # 全部畫出來
+        plt.plot(new_peaks_idx, signal[new_peaks_idx], "x", color='red')  # 挑最大的畫出來
+        plt.show()
+
+        def draw_all_peaks():
+            _d_peaks_idx, _ = find_peaks(signal, height=0)
+            plt.title("All peaks show")
+            plt.plot(signal)
+            plt.plot(_d_peaks_idx, signal[_d_peaks_idx], ".")
+            plt.show()
+
+        if show_all_peaks:
+            draw_all_peaks()
+
+
+    def _calc_most_height_peaks(self, peaks_pair: tuple, percent=95):
+        """
+        Args:
+            peaks_pair: 訊號 idx，該 idx 的峰值
+            percent: 當作 PR 值 (取峰值高的)。
+        Returns:
+            返回所需要的 peaks_idx(峰值索引，根據原來的訊號總長度), peaks_prominence(峰值)
+        """
+        assert len(peaks_pair) == 2
+        assert peaks_pair[0].shape == peaks_pair[1].shape
+        idx, promi = peaks_pair
+        mask = promi > np.percentile(promi, percent)
+        new_idx, new_promi = idx[mask], promi[mask]
+
+        return new_idx, new_promi
+
+    def _get_static_all_neuron_fft_avg_(self, update: bool):
+        if self.__static_all_neuron_fft_avg_ is None:
+            self._update_static_all_neuron_fft_avg_()
+        elif update:
+            self._update_static_all_neuron_fft_avg_()
+
+        return self.__static_all_neuron_fft_avg_
+
+    def _update_static_all_neuron_fft_avg_(self):
+        self.__static_all_neuron_fft_avg_ = self._get_all_neuron_fft_avg()

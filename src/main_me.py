@@ -160,8 +160,8 @@ if __name__ == "__main__":
                                                       args=args)
     #
     # train
-    # net = train.train(train_loader_list[0], net, args, logger)
-    net.load_state_dict(torch.load(r"./log/DAE_C_2022_0128_1620_56/latest.pt"))
+    net = train.train(train_loader_list[0], net, args, logger)
+    #net.load_state_dict(torch.load(r"./log/DAE_C_2022_0128_1620_56/latest.pt"))
 
     # 全新物件，全新感受
     LA = LatentAnalyzer(net, train_loader_list[0],
@@ -173,7 +173,10 @@ if __name__ == "__main__":
 
     # 繪製 加權平均 fft
     LA.fft_plot_length = 'All'  # 或者使用 'All'
-    LA.plot_avg_fft(plot_otsu=True, plot_axvline=0)
+    #LA.plot_avg_fft(plot_otsu=True, plot_axvline=0)
+
+    # 分析 波峰
+    LA._plot_signal_peak()
 
     # Source Separation by MFA analysis.
     mfa = MFA.MFA_source_separation(net, FFT_dict=FFT_dict, args=args)
