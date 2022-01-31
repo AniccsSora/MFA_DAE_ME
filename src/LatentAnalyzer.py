@@ -169,8 +169,9 @@ class LatentAnalyzer:
 
         print("otsu threshold:", thres)
         plt.title(f"Latent layer neuron fft avg (otsu threshold: {thres})")
-        plt.plot(self._get_plot_neuron_fft_avg())  # float
-        plt.xlim(1, len(self._get_plot_neuron_fft_avg()))
+        _draw_target = self._get_plot_neuron_fft_avg()
+        plt.plot()  # float
+        plt.xlim(1, len(_draw_target))
         # plt.plot(for_otsu_dtype)  # uint8
         if plot_otsu:
             plt.axvline(x=thres, color='green', alpha=0.5)
