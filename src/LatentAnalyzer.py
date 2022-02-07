@@ -25,8 +25,11 @@ class LatentAnalyzer:
         self.encoder = None
         self.node_representation = None
         self.fft_plot_length = 'all'
+        self._latent_n_number = 2400  # 模型的 latent neuron 數量
+        self._sample_rate = 8000
         # ---------------------  static 表示 特殊靜態變數，如要安全取用，請呼叫他的更新
         self.__static_all_neuron_fft_avg_ = None
+        self.__rfft_freq = None
         # --------------------- (最後/其他)初始化
         self._finally_init()
         # --------------------- instance attribute assignment
@@ -69,6 +72,28 @@ class LatentAnalyzer:
             self._plot_neuron_fft_representation(self.node_representation[idx],
                                                 str(idx))
 
+    def plot_all_latent_neuron_peaks(self):
+        encoder = self.encoder
+        net = self.net
+
+        for idx in tqdm(range(len(self.node_representation))):
+            signal = self.node_representation[idx]
+            peaks_idx, _ = find_peaks(signal,
+                                      distance=5,  # peaks 間最小距離
+                                      height=0)  # height= ([最小高度], [最大高度])
+            prominences = peak_prominences(signal, peaks_idx)[0]  # 計算突出值
+            contour_heights = signal[peaks_idx] - prominences  # 突出線條
+            plt.title("Filter Peaks show")
+            plt.plot(signal)
+            # plt.vlines(x=peaks_idx, ymin=contour_heights, ymax=signal[peaks_idx])
+            new_peaks_idx, _ = self._calc_most_height_peaks((peaks_idx, prominences))
+            plt.plot(peaks_idx, signal[peaks_idx], ".", alpha=.3)  # 全部畫出來
+            plt.plot(new_peaks_idx, signal[new_peaks_idx], "x", color='red')  # 挑最大的畫出來
+            plt.show()
+            input("任意按鍵繼續")
+            pass
+
+
     def _plot_neuron_fft_representation(self, _1d_tensor, save_name):
         # 因為全長 10秒 作分析太多了故 擷取部分長度即可
         audio_total = self.audio_length  # 音源全長
@@ -94,13 +119,13 @@ class LatentAnalyzer:
         #         pass
         #     else:
         #         _1d_tensor_short_odd_minus1[idx] *= -1.0
-        # _ = np.abs(np.fft.fft(_1d_tensor_short_odd_minus1))  # 做一維傅立葉變換 奇數idx 值*-1
+        # _ = np.abs(np.fft.rfft(_1d_tensor_short_odd_minus1))  # 做一維傅立葉變換 奇數idx 值*-1
 
-        _ = np.abs(np.fft.fft(_1d_tensor_short))  # 做一維傅立葉變換
+        _ = np.abs(np.fft.rfft(_1d_tensor_short))  # 做一維傅立葉變換
         assert _.ndim == 1
-        _freq = np.fft.fftfreq(_.size, d=8000)
+        _freq = np.fft.rfftfreq(_.size, d=1./self._sample_rate)
         # _ = np.log10(_)  # ------------------------------------  取 log
-        draw_val = _[1:len(_) // 2 + 1]  # 不使用 fft 第 0 個的數值
+        draw_val = _
         plt.plot(draw_val)
         pick_vline = np.argmax(draw_val)
         plt.axvline(x=pick_vline, color='red', linewidth=1, alpha=0.5)
@@ -122,7 +147,7 @@ class LatentAnalyzer:
     def get_otsu_threshold(self):
         """
         Returns:
-            所有神經元輸出，並獨自做fft，加總並平均的 spectrum並做 otsu 做二分。
+            所有神經元輸出，並獨自做 rfft，加總並平均的 spectrum並做 otsu 做二分。
         """
         all_node_fft_avg = self._get_all_neuron_fft_avg()
 
@@ -131,31 +156,39 @@ class LatentAnalyzer:
 
         return thres
 
+    def get_otsu_threshold_freq_ver(self):
+        """
+        Returns:
+            get_otsu_threshold 的 freq 刻度版本
+        """
+        thres = int(self.get_otsu_threshold())
+
+        return self._get_rfft_freq()[thres+1]
+
     def _get_all_neuron_fft_avg(self):
         """
         Returns:
-            所有神經元輸出，並獨自做fft，加總並平均的 spectrum。
+            所有神經元輸出，並獨自做 real-fft，加總並平均的 spectrum。
         """
-        fft_res = self._do_latent_representation_fft(remove_first=True)
+        fft_res, freq = self._do_latent_representation_rfft(remove_first=True)
         # 計算全node平均
         all_node_fft_sum = np.sum(fft_res, axis=0)
-        _ = all_node_fft_sum / 2400.0
-        assert all_node_fft_sum.ndim == 1  # 因為下方使用 .size 作取值，這邊要小心。
-        all_node_fft_avg = _[:all_node_fft_sum.size // 2 + 1]
 
-        return all_node_fft_avg
+        res = all_node_fft_sum / self._latent_n_number
+
+        return res
 
     def _get_plot_neuron_fft_avg(self):
         """
         Returns: 要拿來繪製的 fft signal，回傳不特定長度
         (內容為所有神經元輸出，並獨自做fft，加總並平均的 spectrum。)
         """
-        fft_res = self._do_latent_representation_fft(remove_first=True)
+        fft_res, freq = self._do_latent_representation_rfft(remove_first=True)
         # 計算全node平均
         all_node_fft_sum = np.sum(fft_res, axis=0)
-        _ = all_node_fft_sum / 2400.0
-        assert all_node_fft_sum.ndim == 1  # 因為下方使用 .size 作取值，這邊要小心。
-        all_node_fft_avg = _[:all_node_fft_sum.size // 2 + 1]
+        _ = all_node_fft_sum / self._latent_n_number
+
+        all_node_fft_avg = _
 
         if isinstance(self.fft_plot_length, str):
             assert self.fft_plot_length.lower() == 'all'
@@ -163,19 +196,24 @@ class LatentAnalyzer:
             assert 0 < self.fft_plot_length < len(all_node_fft_avg)
             all_node_fft_avg = all_node_fft_avg[0:self.fft_plot_length]
 
-        return all_node_fft_avg
+        return all_node_fft_avg, freq
 
-    def plot_avg_fft(self, plot_otsu=True, plot_axvline=0.0):
+    def plot_avg_fft(self, plot_otsu=True, plot_axvline=0.0, freq_tick=True):
 
         # 這個 thres 是拿來畫在 fft 上的，不一定會用到。
-        thres = self.get_otsu_threshold()
+        if freq_tick:
+            thres = int(self.get_otsu_threshold_freq_ver())
+        else:
+            thres = self.get_otsu_threshold()
 
-        print("otsu threshold:", thres)
+        print(f"otsu threshold (freq_tick={freq_tick}):", thres)
+
         plt.title(f"Latent layer neuron fft avg (otsu threshold: {thres})")
-        _draw_target = self._get_plot_neuron_fft_avg()
-        plt.plot(_draw_target)  # float
-        plt.xlim(1, len(_draw_target))
-        # plt.plot(for_otsu_dtype)  # uint8
+        _draw_target, freq = self._get_plot_neuron_fft_avg()
+        if freq_tick:
+            plt.plot(freq, _draw_target)
+        else:
+            plt.plot(_draw_target)
         if plot_otsu:
             plt.axvline(x=thres, color='green', alpha=0.5)
         if plot_otsu and plot_axvline != 0.0:
@@ -201,16 +239,20 @@ class LatentAnalyzer:
         return ret
 
 
-    def _do_latent_representation_fft(self, remove_first):
+    def _do_latent_representation_rfft(self, remove_first):
         """
             Returns:
-                針對每個 row 做fft 的結果。
+                針對每個 row 做 real-fft 的結果。
         """
-        _fft = np.fft.fft(self.node_representation, axis=1)
+        _fft = np.fft.rfft(self.node_representation, axis=1)
         res = np.abs(_fft)
+        res_freq = np.fft.rfftfreq(n=self.node_representation[0].size, d=1. / self._sample_rate)
+        self.__rfft_freq = res_freq
         if remove_first:
             res = res[:, 1:]
-        return res
+            res_freq = res_freq[1:]
+
+        return res, res_freq
 
     def _neuron_idx_classify(self, fix_thres_threshold=-1, delta=0.0):
         if fix_thres_threshold == -1:
@@ -241,7 +283,7 @@ class LatentAnalyzer:
         return  (A,B)  兩張大小一樣的 latent matrix
         """
         #
-        fft_res = self._do_latent_representation_fft(remove_first=True)
+        fft_res, freq = self._do_latent_representation_rfft(remove_first=True)
         fft_res = fft_res[:, :fft_res.shape[1] // 2 + 1]  # 取半
 
         # 取得每一個 neuron 的 fft pick 數值
@@ -259,8 +301,8 @@ class LatentAnalyzer:
             delta=delta)
 
         if plot:
-            sp = self._get_plot_neuron_fft_avg()
-            plt.plot(sp)
+            sp, freq = self._get_plot_neuron_fft_avg()
+            plt.plot(freq, sp)
             plt.axvline(x=fix_thres, color='red', alpha=0.5)
             if delta != 0.0:
                 plt.axvspan(fix_thres-delta, fix_thres+delta, facecolor='red', alpha=0.1)
@@ -408,3 +450,11 @@ class LatentAnalyzer:
 
     def _update_static_all_neuron_fft_avg_(self):
         self.__static_all_neuron_fft_avg_ = self._get_all_neuron_fft_avg()
+
+    def _get_rfft_freq(self):
+        """
+        取得 real-fft 的 freq. tick
+        """
+        if self.__rfft_freq is None:
+            self._do_latent_representation_rfft()
+        return self.__rfft_freq

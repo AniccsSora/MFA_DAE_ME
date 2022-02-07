@@ -136,10 +136,10 @@ if args.cuda:
 if __name__ == "__main__":
 
     # data loader
-    test_filelist = ["./dataset/4_1.wav"]
-    # test_filelist = ["./dataset/4_1_5sec.wav"]
+    #test_filelist = ["./dataset/4_1.wav"]
+    #test_filelist = ["./dataset/4_1_5sec.wav"]
     #test_filelist = ["./dataset/senpai_data/heart_lung_sam2/mix/training_noise_呼吸/0dB/4_1.wav"]
-    #test_filelist = ["./dataset/senpai_data/heart_lung_sam2/mix/training_noisy_心肺/6dB/3_0.wav"]
+    test_filelist = ["./dataset/senpai_data/heart_lung_sam2/mix/training_noisy_心肺/6dB/3_0.wav"]
 
     test_filename = test_filelist[0].split('/')[-1].split('.')[0]  # get pure-filename
     outdir = "{}/test_".format(args.logdir)
@@ -160,8 +160,8 @@ if __name__ == "__main__":
                                                       args=args)
     #
     # train
-    net = train.train(train_loader_list[0], net, args, logger)
-    #net.load_state_dict(torch.load(r"./log/DAE_C_2022_0128_1620_56/latest.pt"))
+    #net = train.train(train_loader_list[0], net, args, logger)
+    net.load_state_dict(torch.load(r"./log/DAE_C_2022_0207_2114_57/latest.pt"))
 
     # 全新物件，全新感受
     LA = LatentAnalyzer(net, train_loader_list[0],
@@ -169,11 +169,13 @@ if __name__ == "__main__":
 
     # 這個會繪製 每個 neuron 的值與 fft 輸出。
     # me.analysis_latent_space_representation(net, train_loader_list[0])
-    # LA.plot_all_neuron_fft_representation()
+    #LA.plot_all_neuron_fft_representation()
+    #LA.plot_all_latent_neuron_peaks()
 
     # 繪製 加權平均 fft
     LA.fft_plot_length = 'All'  # 或者使用 'All'
-    #LA.plot_avg_fft(plot_otsu=True, plot_axvline=0)
+    # LA.plot_avg_fft(plot_otsu=True, plot_axvline=0, freq_tick=False)
+    LA.plot_avg_fft(plot_otsu=True, plot_axvline=0, freq_tick=True)
 
     # 分析 波峰
     LA._plot_signal_peak()
