@@ -3,6 +3,7 @@ from torch.utils.data import DataLoader
 from dataset.HLsep_dataloader import hl_dataloader
 from typing import List, Dict, Any, AnyStr
 from scipy.signal import peak_prominences, find_peaks, find_peaks_cwt
+import scipy
 import torch
 import matplotlib.pyplot as plt
 import os
@@ -198,7 +199,7 @@ class LatentAnalyzer:
 
         return all_node_fft_avg, freq
 
-    def plot_avg_fft(self, plot_otsu=True, plot_axvline=0.0, freq_tick=True):
+    def plot_avg_fft(self, plot_otsu=True, plot_axvline=0.0, freq_tick=True, x_log_scale=True, smooth=True):
 
         # 這個 thres 是拿來畫在 fft 上的，不一定會用到。
         if freq_tick:
@@ -208,20 +209,38 @@ class LatentAnalyzer:
 
         print(f"otsu threshold (freq_tick={freq_tick}):", thres)
 
+        if x_log_scale:
+            ax = plt.gca()
+            ax.set_xscale('log')
+
         plt.title(f"Latent layer neuron fft avg (otsu threshold: {thres})")
         _draw_target, freq = self._get_plot_neuron_fft_avg()
+
+        if smooth:
+            #_draw_target = self._smooth_signal(_draw_target)
+            wl = 11
+            _draw_target = self._smooth(_draw_target, window_len=wl)
+            _shift = (wl-1)//2
+            _draw_target = _draw_target[_shift:len(_draw_target)-_shift]
+
         if freq_tick:
             plt.plot(freq, _draw_target)
         else:
             plt.plot(_draw_target)
         if plot_otsu:
             plt.axvline(x=thres, color='green', alpha=0.5)
+            plt.axvline(x=0, color='red', alpha=0.5, linewidth=1)
         if plot_otsu and plot_axvline != 0.0:
             print("[warn]: 請選擇一個 垂直線 繪製!!")
         if plot_axvline != 0.0:
             plt.axvline(x=plot_axvline, color='green', alpha=0.5)
             plt.axvline(x=thres, color='red', alpha=0.2)
         plt.show()
+
+    def _smooth_signal(self, sig):
+        win = scipy.signal.windows.hann(10)
+        filtered = scipy.signal.convolve(sig, win, mode='same') / sum(win)
+        return filtered
 
     def _do_otsu_for_avg_fft_spectrum(self, avg_spectrum):
         """
@@ -458,3 +477,60 @@ class LatentAnalyzer:
         if self.__rfft_freq is None:
             self._do_latent_representation_rfft()
         return self.__rfft_freq
+
+    def _smooth(self, x, window_len=11, window='hanning'):
+        """smooth the data using a window with requested size.
+
+        This method is based on the convolution of a scaled window with the signal.
+        The signal is prepared by introducing reflected copies of the signal
+        (with the window size) in both ends so that transient parts are minimized
+        in the begining and end part of the output signal.
+
+        input:
+            x: the input signal
+            window_len: the dimension of the smoothing window; should be an odd integer
+            window: the type of window from 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'
+                flat window will produce a moving average smoothing.
+
+        output:
+            the smoothed signal
+
+        example:
+
+        t=linspace(-2,2,0.1)
+        x=sin(t)+randn(len(t))*0.1
+        y=smooth(x)
+
+        see also:
+
+        numpy.hanning, numpy.hamming, numpy.bartlett, numpy.blackman, numpy.convolve
+        scipy.signal.lfilter
+
+        TODO: the window parameter could be the window itself if an array instead of a string
+        NOTE: length(output) != length(input), to correct this: return y[(window_len/2-1):-(window_len/2)] instead of just y.
+        """
+
+        if x.ndim != 1:
+            raise ValueError("smooth only accepts 1 dimension arrays.")
+
+        if x.size < window_len:
+            raise ValueError("Input vector needs to be bigger than window size.")
+
+        if window_len < 3:
+            return x
+
+        if not window in ['flat', 'hanning', 'hamming', 'bartlett', 'blackman']:
+            raise ValueError("Window is on of 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'")
+
+        s = np.r_[x[window_len - 1:0:-1], x, x[-2:-window_len - 1:-1]]
+
+        if window == 'flat':  # moving average
+            w = np.ones(window_len, 'd')
+        else:
+            if window is 'hanning':
+                w = np.hanning(window_len)
+            else:
+                w = eval('np.' + window + '(window_len)')
+
+        y = np.convolve(w / w.sum(), s, mode='valid')
+        return y
