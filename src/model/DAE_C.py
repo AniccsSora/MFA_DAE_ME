@@ -116,10 +116,8 @@ class Decoder(nn.Module):
             in_channels = out_channels
         return nn.Sequential(*layers)
 
-
     def forward(self, x):
-
-        if len(self.dense_l) == 0: 
+        if len(self.dense_l) == 0:
             x = torch.reshape(x, (-1, self.decoder_layer[0], 1, self.feature_dim))
         else:
             x = self.dense_layer(x)

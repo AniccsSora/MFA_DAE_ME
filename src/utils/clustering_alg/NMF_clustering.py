@@ -25,21 +25,23 @@ def matrix_standardization(data):
 
     return data,aa,range_
 
+
 def basis_exchange(W, H, k_range, segment_width):
 
-    period_feature=np.array([[]])
+    period_feature = np.array([[]])
     for n in range(0, W.shape[1]):
-        aa = np.fft.fft(H[n,:] - np.mean(H[n,:]))#/H.shape[0]
+        aa = np.fft.fft(H[n, :] - np.mean(H[n, :]))  # /H.shape[0]
+        # aa = H[n, :] - np.mean(H[n, :])  # 不使用 fft 時跑這條
         aa = np.abs(aa[1:np.int(np.floor(aa.shape[0]/2+1))])
-        if(n==0):
+        if n == 0:
             period_feature = np.zeros((aa.shape[0], W.shape[1]))
-            diff_period = np.zeros((W.shape[1],1))
-        period_feature[:,n] = aa
-        diff_period[n,0] = np.max(aa[1:]) - np.median(aa)
+            diff_period = np.zeros((W.shape[1], 1))
+        period_feature[:, n] = aa
+        diff_period[n, 0] = np.max(aa[1:]) - np.median(aa)
 
-    period_feature = period_feature[1:,:] 
+    period_feature = period_feature[1:, :]
     class_index = nmfsc_clustering(period_feature, k_range)
-    class_index = np.reshape(class_index,(-1, ))
+    class_index = np.reshape(class_index, (-1, ))
 
     return W, H, class_index, period_feature
 
@@ -88,7 +90,7 @@ def projfunc(s, k1, k2, nn):
  
 def nmfsc_clustering(data, k_range, sH=0.3, iter_num = 500, replica = 10):
 
-    if(len(k_range)==1):
+    if len(k_range) == 1:
         replica = 1
         consensus_matrix = np.array([])
         dispersion = np.array([])
@@ -111,7 +113,7 @@ def nmfsc( V, rdim, sW, sH, iter_num, showflag, W0, H0):
     
     W = np.absolute(np.random.randn(vdim, rdim))
     H = np.absolute(np.random.randn(rdim, samples))
-    H = H/np.dot(np.reshape(np.sqrt(np.sum(H**2, 1)),(H.shape[0], 1)),np.ones((1,samples)))
+    H = H/np.dot(np.reshape(np.sqrt(np.sum(H**2, 1)), (H.shape[0], 1)), np.ones((1,samples)))
     if(not(np.all(sW))):
         L1a = math.sqrt(vdim)-(math.sqrt(vdim)-1)*sW
         for i in range(0, rdim):
