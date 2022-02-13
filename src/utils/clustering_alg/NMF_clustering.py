@@ -30,9 +30,12 @@ def basis_exchange(W, H, k_range, segment_width):
 
     period_feature = np.array([[]])
     for n in range(0, W.shape[1]):
-        aa = np.fft.fft(H[n, :] - np.mean(H[n, :]))  # /H.shape[0]
-        # aa = H[n, :] - np.mean(H[n, :])  # 不使用 fft 時跑這條
-        aa = np.abs(aa[1:np.int(np.floor(aa.shape[0]/2+1))])
+        _DO_FFT = True
+        if _DO_FFT:
+            aa = np.fft.fft(H[n, :] - np.mean(H[n, :]))  # /H.shape[0]
+            aa = np.abs(aa[1:np.int(np.floor(aa.shape[0]/2+1))])
+        else:
+            aa = H[n, :] - np.mean(H[n, :])  # 不使用 fft 時跑這條
         if n == 0:
             period_feature = np.zeros((aa.shape[0], W.shape[1]))
             diff_period = np.zeros((W.shape[1], 1))
