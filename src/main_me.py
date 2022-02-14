@@ -126,6 +126,7 @@ FFT_dict = {
 # declare model object
 net = Model[args.model_type](model_dict=model_dict[args.model_type], args=args, logger=logger).cuda()
 
+# torch setting random seed.
 torch.manual_seed(args.seed)
 
 if args.cuda:
@@ -136,10 +137,10 @@ if args.cuda:
 if __name__ == "__main__":
 
     # data loader
-    #test_filelist = ["./dataset/4_1.wav"]
+    test_filelist = ["./dataset/4_1.wav"]
     #test_filelist = ["./dataset/4_1_5sec.wav"]
     #test_filelist = ["./dataset/senpai_data/heart_lung_sam2/mix/training_noise_呼吸/0dB/4_1.wav"]
-    test_filelist = ["./dataset/senpai_data/heart_lung_sam2/mix/training_noisy_心肺/6dB/3_0.wav"]
+    #test_filelist = ["./dataset/senpai_data/heart_lung_sam2/mix/training_noisy_心肺/6dB/3_0.wav"]
 
     test_filename = test_filelist[0].split('/')[-1].split('.')[0]  # get pure-filename
     outdir = "{}/test_".format(args.logdir)

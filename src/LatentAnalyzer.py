@@ -10,7 +10,7 @@ import os
 from os.path import join as pjoin
 from tqdm import tqdm
 import cv2
-
+from matplotlib.scale import FuncScale
 
 class LatentAnalyzer:
     """
@@ -478,7 +478,7 @@ class LatentAnalyzer:
             self._do_latent_representation_rfft()
         return self.__rfft_freq
 
-    def _smooth(self, x, window_len=11, window='hanning'):
+    def _smooth(self, x, window_len=3, window='hanning'):
         """smooth the data using a window with requested size.
 
         This method is based on the convolution of a scaled window with the signal.
@@ -527,10 +527,27 @@ class LatentAnalyzer:
         if window == 'flat':  # moving average
             w = np.ones(window_len, 'd')
         else:
-            if window is 'hanning':
+            if window == 'hanning':
                 w = np.hanning(window_len)
             else:
                 w = eval('np.' + window + '(window_len)')
 
         y = np.convolve(w / w.sum(), s, mode='valid')
         return y
+
+
+def mel(*a):
+    a = np.array(a)
+    assert a.ndim == 1
+    return 2410*np.log10(1+a/625)
+
+
+if __name__ == "__main__":
+    x = np.arange(1, 4000)
+    y = np.log10(x**2)
+
+    ax = plt.gca()
+    yo = FuncScale(ax, mel)
+    ax.set_xscale(yo)
+    plt.plot(x, y)
+    plt.show()
