@@ -162,7 +162,7 @@ if __name__ == "__main__":
     #
     # train
     net = train.train(train_loader_list[0], net, args, logger)
-    #net.load_state_dict(torch.load(r"./log/DAE_C_2022_0209_2058_30/latest.pt"))
+    #net.load_state_dict(torch.load(r"./log/DAE_C_2022_0214_1125_42/latest.pt"))
 
     # 全新物件，全新感受
     LA = LatentAnalyzer(net, train_loader_list[0],
@@ -170,14 +170,15 @@ if __name__ == "__main__":
 
     # 這個會繪製 每個 neuron 的值與 fft 輸出。
     # me.analysis_latent_space_representation(net, train_loader_list[0])
-    #LA.plot_all_neuron_fft_representation()
-    #LA.plot_all_latent_neuron_peaks()
+    LA.plot_all_fft_latent_neuron_peaks()
+    LA.plot_all_neuron_fft_representation()
 
     # 繪製 加權平均 fft
     LA.fft_plot_length = 'All'  # 或者使用 'All'
     # LA.plot_avg_fft(plot_otsu=True, plot_axvline=0, freq_tick=False)
     LA.plot_avg_fft(plot_otsu=True, plot_axvline=0, freq_tick=True,
                     x_log_scale=False, smooth=True)
+
 
     # 分析 波峰
     LA._plot_signal_peak()

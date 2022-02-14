@@ -73,26 +73,39 @@ class LatentAnalyzer:
             self._plot_neuron_fft_representation(self.node_representation[idx],
                                                 str(idx))
 
-    def plot_all_latent_neuron_peaks(self):
+    def plot_all_fft_latent_neuron_peaks(self):
         encoder = self.encoder
         net = self.net
 
         for idx in tqdm(range(len(self.node_representation))):
             signal = self.node_representation[idx]
-            peaks_idx, _ = find_peaks(signal,
+            #
+            _fft = np.fft.rfft(signal)[1:]  # 輸出結果第一個不取
+            res_no_smooth = np.abs(_fft)  # fft 結果
+            res_freq = np.fft.rfftfreq(n=signal.size, d=1. / self._sample_rate)[1:]
+            res = self._smooth(res_no_smooth, window_len=11)
+
+            peaks_idx, _ = find_peaks(res,
                                       distance=5,  # peaks 間最小距離
                                       height=0)  # height= ([最小高度], [最大高度])
-            prominences = peak_prominences(signal, peaks_idx)[0]  # 計算突出值
-            contour_heights = signal[peaks_idx] - prominences  # 突出線條
-            plt.title("Filter Peaks show")
-            plt.plot(signal)
+            prominences = peak_prominences(res, peaks_idx)[0]  # 計算突出值
+            contour_heights = res[peaks_idx] - prominences  # 突出線條
+            plt.title(f"Filter Peaks show: No.{idx}")
+            plt.plot(res_freq, res)
+            plt.plot(res_freq, res_no_smooth, alpha=.3)
             # plt.vlines(x=peaks_idx, ymin=contour_heights, ymax=signal[peaks_idx])
-            new_peaks_idx, _ = self._calc_most_height_peaks((peaks_idx, prominences))
-            plt.plot(peaks_idx, signal[peaks_idx], ".", alpha=.3)  # 全部畫出來
-            plt.plot(new_peaks_idx, signal[new_peaks_idx], "x", color='red')  # 挑最大的畫出來
-            plt.show()
-            input("任意按鍵繼續")
-            pass
+            new_peaks_idx, _ = self._calc_most_height_peaks((peaks_idx, prominences),
+                                                            percent=.9)
+            # plt.plot(peaks_idx, res[peaks_idx], ".", alpha=.3)  # 全部 peaks 畫出來
+            plt.plot(res_freq[new_peaks_idx], res[new_peaks_idx], "x", color='red')  # 挑最大的畫出來
+            plt.plot(res_freq[new_peaks_idx], res_no_smooth[new_peaks_idx], "o", color='red')
+            #plt.show()
+            dir_name = './latent_code_fft_peaks (smoooth)'
+            os.makedirs(dir_name, exist_ok=True)
+            save_name = pjoin(dir_name, str(idx)+'.png')
+            plt.savefig(save_name)
+            plt.clf()
+
 
 
     def _plot_neuron_fft_representation(self, _1d_tensor, save_name):
@@ -220,8 +233,10 @@ class LatentAnalyzer:
             #_draw_target = self._smooth_signal(_draw_target)
             wl = 11
             _draw_target = self._smooth(_draw_target, window_len=wl)
-            _shift = (wl-1)//2
-            _draw_target = _draw_target[_shift:len(_draw_target)-_shift]
+            #_shift = (wl-1)//2
+            #_draw_target = _draw_target[_shift:len(_draw_target)-_shift]
+        # 劃出 peak
+        self._plot_signal_peak(default_sig=_draw_target)
 
         if freq_tick:
             plt.plot(freq, _draw_target)
@@ -409,13 +424,16 @@ class LatentAnalyzer:
 
         return low_latent_image, high_latent_image
 
-    def _plot_signal_peak(self, show_all_peaks=True):
+    def _plot_signal_peak(self, show_all_peaks=True, default_sig=None):
         """
         Returns: 分析 neuron 的 訊號突出點，並返回
         """
         # peak_prominences()  # 計算峰值的突出度
         # find_peaks()  # 尋找波峰
-        signal = self._get_static_all_neuron_fft_avg_(update=True)
+        if default_sig is None:
+            signal = self._get_static_all_neuron_fft_avg_(update=True)
+        else:
+            signal = default_sig
 
         # 這會找到很多波峰，全部凸的都會出來
         # peaks_idx = find_peaks_cwt(signal, widths=1)  # widths 感興趣的峰值寬度
@@ -533,6 +551,9 @@ class LatentAnalyzer:
                 w = eval('np.' + window + '(window_len)')
 
         y = np.convolve(w / w.sum(), s, mode='valid')
+        _shift = (window_len - 1) // 2
+        y = y[_shift:len(y) - _shift]
+
         return y
 
 
