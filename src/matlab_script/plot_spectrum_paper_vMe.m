@@ -19,10 +19,10 @@ exp_path = '.\exp_fig\';
 % wavfilename2 = 'D:\git-repo\qpzm_mfa_dae\src\senpai_data\heart_lung_sam2\mix\training_noise_©I§l\0dB\4_1.wav';
 
 % ÀH·N´ú¸Õ
-%wavfilename1 = 'D:\git-repo\qpzm_mfa_dae\src\senpai_data\heart_lung_sam2\mix\training_clean_¤ß¸õ\0dB\4_1.wav';
-%wavfilename2 = 'D:\git-repo\qpzm_mfa_dae\src\senpai_data\heart_lung_sam2\mix\training_noise_©I§l\0dB\4_1.wav';
-wavfilename1 = 'D:\git-repo\MFA_DAE_ME\src\log\DAE_C_2022_0124_1601_56\test_my_source2\3_0.wav';
-wavfilename2 = 'D:\git-repo\MFA_DAE_ME\src\log\DAE_C_2022_0124_1602_50\test_my_source2\3_0.wav';
+wavfilename1 = 'D:\git-repo\qpzm_mfa_dae\src\senpai_data\heart_lung_sam2\mix\training_clean_¤ß¸õ\0dB\4_1.wav';
+wavfilename2 = 'D:\git-repo\qpzm_mfa_dae\src\senpai_data\heart_lung_sam2\mix\training_noise_©I§l\0dB\4_1.wav';
+%wavfilename1 = 'D:\git-repo\MFA_DAE_ME\src\log\DAE_C_2022_0124_1601_56\test_my_source2\3_0.wav';
+%wavfilename2 = 'D:\git-repo\MFA_DAE_ME\src\log\DAE_C_2022_0124_1602_50\test_my_source2\3_0.wav';
 
 FontSize = 18;
 figure(1);

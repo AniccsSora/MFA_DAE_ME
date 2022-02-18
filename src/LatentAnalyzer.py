@@ -19,7 +19,7 @@ class LatentAnalyzer:
     def __init__(self, net, dataloader, audio_length, audio_analysis_used):
         self.net = net
         self.dataloader = dataloader
-        self.audio_length = audio_length
+        self.audio_length = audio_length  # 秒數
         self.audio_analysis_used = audio_analysis_used
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         # --------------------- 後續參數
@@ -65,18 +65,23 @@ class LatentAnalyzer:
 
         self.node_representation = node_representation
 
-    def plot_all_neuron_fft_representation(self):
+    def plot_all_neuron_fft_representation(self, limit=0):
         encoder = self.encoder
         net = self.net
-
+        if limit == 0:
+            limit = 99999999
         for idx in tqdm(range(len(self.node_representation))):
             self._plot_neuron_fft_representation(self.node_representation[idx],
                                                 str(idx))
+            if idx >= limit:
+                print(f"end of limit:{limit}")
+                break
 
-    def plot_all_fft_latent_neuron_peaks(self):
+    def plot_all_fft_latent_neuron_peaks(self, limit=0):
         encoder = self.encoder
         net = self.net
-
+        if limit == 0:
+            limit = 999999999
         for idx in tqdm(range(len(self.node_representation))):
             signal = self.node_representation[idx]
             #
@@ -92,13 +97,14 @@ class LatentAnalyzer:
             contour_heights = res[peaks_idx] - prominences  # 突出線條
             plt.title(f"Filter Peaks show: No.{idx}")
             plt.plot(res_freq, res)
-            plt.plot(res_freq, res_no_smooth, alpha=.3)
+            plt.plot(res_freq, res_no_smooth, alpha=.5)
             # plt.vlines(x=peaks_idx, ymin=contour_heights, ymax=signal[peaks_idx])
             new_peaks_idx, _ = self._calc_most_height_peaks((peaks_idx, prominences),
                                                             percent=.9)
             # plt.plot(peaks_idx, res[peaks_idx], ".", alpha=.3)  # 全部 peaks 畫出來
             plt.plot(res_freq[new_peaks_idx], res[new_peaks_idx], "x", color='red')  # 挑最大的畫出來
-            plt.plot(res_freq[new_peaks_idx], res_no_smooth[new_peaks_idx], "o", color='red')
+            # 繪製對用於原始訊號位置的 peaks
+            #plt.plot(res_freq[new_peaks_idx], res_no_smooth[new_peaks_idx], "o", color='red')
             #plt.show()
             dir_name = './latent_code_fft_peaks (smoooth)'
             os.makedirs(dir_name, exist_ok=True)
@@ -106,6 +112,9 @@ class LatentAnalyzer:
             plt.savefig(save_name)
             plt.clf()
 
+            if idx >= limit:
+                print(f"end of limit:{limit}")
+                break
 
 
     def _plot_neuron_fft_representation(self, _1d_tensor, save_name):
@@ -135,7 +144,7 @@ class LatentAnalyzer:
         #         _1d_tensor_short_odd_minus1[idx] *= -1.0
         # _ = np.abs(np.fft.rfft(_1d_tensor_short_odd_minus1))  # 做一維傅立葉變換 奇數idx 值*-1
 
-        _ = np.abs(np.fft.rfft(_1d_tensor_short))  # 做一維傅立葉變換
+        _ = np.abs(np.fft.rfft(_1d_tensor_short)[1:])  # 做 rfft，去除第一個元素
         assert _.ndim == 1
         _freq = np.fft.rfftfreq(_.size, d=1./self._sample_rate)
         # _ = np.log10(_)  # ------------------------------------  取 log
@@ -228,7 +237,7 @@ class LatentAnalyzer:
 
         plt.title(f"Latent layer neuron fft avg (otsu threshold: {thres})")
         _draw_target, freq = self._get_plot_neuron_fft_avg()
-
+        _orignal_draw_target = np.copy(_draw_target)
         if smooth:
             #_draw_target = self._smooth_signal(_draw_target)
             wl = 11
@@ -239,9 +248,13 @@ class LatentAnalyzer:
         self._plot_signal_peak(default_sig=_draw_target)
 
         if freq_tick:
+            ax = plt.gca()
+            ax.set_title("freq. x-tick, FFT (smooth v.s. original)")
             plt.plot(freq, _draw_target)
+            plt.plot(freq, _orignal_draw_target, color='C0', alpha=0.5)
         else:
             plt.plot(_draw_target)
+            plt.plot(_orignal_draw_target, color='C0', alpha=0.5)
         if plot_otsu:
             plt.axvline(x=thres, color='green', alpha=0.5)
             plt.axvline(x=0, color='red', alpha=0.5, linewidth=1)
@@ -446,7 +459,7 @@ class LatentAnalyzer:
         plt.plot(signal)
         # plt.vlines(x=peaks_idx, ymin=contour_heights, ymax=signal[peaks_idx])
         new_peaks_idx, _ = self._calc_most_height_peaks((peaks_idx, prominences))
-        plt.plot(peaks_idx, signal[peaks_idx], ".", alpha=.3)   # 全部畫出來
+        plt.plot(peaks_idx, signal[peaks_idx], ".", alpha=.5)   # 全部畫出來
         plt.plot(new_peaks_idx, signal[new_peaks_idx], "x", color='red')  # 挑最大的畫出來
         plt.show()
 
