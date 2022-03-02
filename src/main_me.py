@@ -161,8 +161,8 @@ if __name__ == "__main__":
                                                       args=args)
     #
     # train
-    net = train.train(train_loader_list[0], net, args, logger)
-    #net.load_state_dict(torch.load(r"./log/DAE_C_2022_0218_1429_11/latest.pt"))
+    #net = train.train(train_loader_list[0], net, args, logger)
+    net.load_state_dict(torch.load(r"./log/DAE_C/latest.pt"))
 
     # 全新物件，全新感受
     LA = LatentAnalyzer(net, train_loader_list[0],
