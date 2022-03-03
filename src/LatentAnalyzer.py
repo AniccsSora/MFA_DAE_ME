@@ -222,7 +222,7 @@ class LatentAnalyzer:
         return all_node_fft_avg, freq
 
     def plot_avg_fft(self, plot_otsu=True, plot_axvline=0.0, freq_tick=True, x_log_scale=True, smooth=True):
-
+        plt.clf()
         # 這個 thres 是拿來畫在 fft 上的，不一定會用到。
         if freq_tick:
             thres = int(self.get_otsu_threshold_freq_ver())
@@ -263,7 +263,7 @@ class LatentAnalyzer:
         if plot_axvline != 0.0:
             plt.axvline(x=plot_axvline, color='green', alpha=0.5)
             plt.axvline(x=thres, color='red', alpha=0.2)
-        plt.show()
+
 
     def _smooth_signal(self, sig):
         win = scipy.signal.windows.hann(10)
@@ -276,8 +276,14 @@ class LatentAnalyzer:
         """
         assert avg_spectrum.ndim == 1  # 資料必須是一維
 
+        # 測試這樣搞 O不OK
+        avg_spectrum = np.clip(avg_spectrum, 0, 255)
+
         for _ in avg_spectrum:
-            assert 0 < _ < 255  # 數值必需在 0~255，因為 cv2 的算法只支援到 uint8
+            assert 0 <= _ <= 255  # 數值必需在 0~255，因為 cv2 的算法只支援到 uint8
+            if (0 < _ < 255) is False:
+                print("max:", np.max(avg_spectrum))
+                print("min:", np.min(avg_spectrum))
 
         for_otsu_dtype = np.array(avg_spectrum, dtype=np.uint8)
 
@@ -455,20 +461,21 @@ class LatentAnalyzer:
                                   height=0)  # height= ([最小高度], [最大高度])
         prominences = peak_prominences(signal, peaks_idx)[0]  # 計算突出值
         contour_heights = signal[peaks_idx] - prominences  # 突出線條
+        plt.clf()
         plt.title("Filter Peaks show")
         plt.plot(signal)
         # plt.vlines(x=peaks_idx, ymin=contour_heights, ymax=signal[peaks_idx])
         new_peaks_idx, _ = self._calc_most_height_peaks((peaks_idx, prominences))
         plt.plot(peaks_idx, signal[peaks_idx], ".", alpha=.5)   # 全部畫出來
         plt.plot(new_peaks_idx, signal[new_peaks_idx], "x", color='red')  # 挑最大的畫出來
-        plt.show()
+
 
         def draw_all_peaks():
             _d_peaks_idx, _ = find_peaks(signal, height=0)
             plt.title("All peaks show")
             plt.plot(signal)
             plt.plot(_d_peaks_idx, signal[_d_peaks_idx], ".")
-            plt.show()
+            #plt.show()
 
         if show_all_peaks:
             draw_all_peaks()

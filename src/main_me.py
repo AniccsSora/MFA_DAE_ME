@@ -19,6 +19,7 @@ import logging
 import util_me as me
 from typing import List, Any
 from LatentAnalyzer import LatentAnalyzer
+import matplotlib.pyplot as plt
 
 logging.getLogger(__name__)
 
@@ -33,8 +34,8 @@ parser.add_argument('--trainOrtest', type=str, default="train", help='status of 
 parser.add_argument('--optim', type=str, default="Adam", help='optimizer for training', choices=['RMSprop', 'SGD', 'Adam'])
 parser.add_argument('--batch_size', type=int, default=32, help='batch size for training (default: 32)')
 parser.add_argument('--lr', type=float, default=1e-4, help='initial learning rate for training (default: 1e-3)')
-parser.add_argument('--CosineAnnealingWarmRestarts', type=bool, default=False, help='optimizer scheduler for training')
-parser.add_argument('--epochs', type=int, default=50, help='number of epochs to train (default: 10)')
+parser.add_argument('--CosineAnnealingWarmRestarts', type=bool, default=True, help='optimizer scheduler for training')
+parser.add_argument('--epochs', type=int, default=100, help='number of epochs to train (default: 10)')
 parser.add_argument('--grad_scale', type=float, default=8, help='learning rate for wage delta calculation')
 parser.add_argument('--seed', type=int, default=117, help='random seed (default: 1)')
 
@@ -48,6 +49,7 @@ parser.add_argument('--clustering_alg', type=str, default='NMF', choices=['NMF',
 parser.add_argument('--wienner_mask', type=bool, default=True, help='wienner time-frequency mask for output')
 #
 parser.add_argument('--fix_thres', type=int, default=-1)
+
 args = parser.parse_args()
 args.cuda = torch.cuda.is_available()
 #  misc.logger.init(args.logdir, 'train_log_')  # 拒用
@@ -89,12 +91,18 @@ DAE_C_dict = {
         "frequency_bins": [0, 300],
         "encoder": [32, 16, 8],
         "decoder": [8, 16, 32, 1],
+        # "encoder": [32, 16, 8, 2],
+        # "decoder":  [2, 4, 8, 12, 16, 20, 24, 28,  32, 1],
         "encoder_filter": [[1, 3], [1, 3], [1, 3]],
         "decoder_filter": [[1, 3], [1, 3], [1, 3], [1, 1]],
         "encoder_act": "relu",
         "decoder_act": "relu",
         "dense": [],
         }
+# 防呆
+assert len(DAE_C_dict['encoder']) == len(DAE_C_dict['encoder_filter'])
+assert len(DAE_C_dict['decoder']) == len(DAE_C_dict['decoder_filter'])
+
 DAE_F_dict = {
         "frequency_bins": [0, 300],
         "encoder": [1024, 512, 256, 128],
@@ -161,8 +169,8 @@ if __name__ == "__main__":
                                                       args=args)
     #
     # train
-    #net = train.train(train_loader_list[0], net, args, logger)
-    net.load_state_dict(torch.load(r"./log/DAE_C/latest.pt"))
+    net = train.train(train_loader_list[0], net, args, logger)
+    #net.load_state_dict(torch.load(r"./log/DAE_C/latest.pt"))
 
     # 全新物件，全新感受
     LA = LatentAnalyzer(net, train_loader_list[0],
@@ -176,17 +184,36 @@ if __name__ == "__main__":
     # 繪製 加權平均 fft
     LA.fft_plot_length = 'All'  # 或者使用 'All'
     # LA.plot_avg_fft(plot_otsu=True, plot_axvline=0, freq_tick=False)
-    LA.plot_avg_fft(plot_otsu=True, plot_axvline=0, freq_tick=True,
+    LA.plot_avg_fft(plot_otsu=True, plot_axvline=0, freq_tick=False,
                     x_log_scale=False, smooth=True)
+    #plt.show()
 
     # 分析 波峰
     LA._plot_signal_peak()
+    # plt.show()
 
     # Source Separation by MFA analysis.
     mfa = MFA.MFA_source_separation(net, FFT_dict=FFT_dict, args=args)
 
     # 用自己分析 latent matrix，新版
     l, h = LA.get_binearlization_latent_matrix()
+    plt.clf()
+    plt.figure(dpi=1200)
+    fig, (latent_repre, l_plot, h_plot) = plt.subplots(1, 3)
+    latent_repre.set_title('latent representation')
+    latent_repre.imshow(l+h)
+    l_plot.set_title('l')
+    l_plot.imshow(l)
+    h_plot.set_title('h')
+    h_plot.imshow(h)
+    plt.tight_layout()
+    # 取得格林威治偏移秒
+    _glin = str(int(time.mktime(time.localtime())))
+    os.makedirs("./latent_representation_ana", exist_ok=True)
+    plt.savefig(f'{args.logdir}/latent_representation_ana.png')
+    plt.savefig(f'./latent_representation_ana/{_glin}.png')
+    #plt.show()
+
     # 使用固定 thres
     # fix_thres = LA.get_otsu_threshold()
     # l, h = LA.get_binearlization_latent_matrix_by_fix_threshold(fix_thres,

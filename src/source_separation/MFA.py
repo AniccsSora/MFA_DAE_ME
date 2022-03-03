@@ -10,6 +10,8 @@ from utils.clustering_alg import K_MEANS,  NMF_clustering
 import os
 import scipy.io.wavfile as wav
 from utils.signalprocess import lps2wav
+from scipy.signal import wiener
+import matplotlib.pyplot as plt
 sys.path.append('../')
 
 
@@ -205,13 +207,17 @@ class MFA_source_separation(object):
             for source_idx in range(len(my_sources)):
                 result = np.array(input)
                 if self.wienner_mask is True:
-                    if source_idx == 0:
-                        # 重新建立原始訊號
-                        result[self.FFT_dict['frequency_bins'][0]:self.FFT_dict['frequency_bins'][1], :] = \
-                            my_sources[0, :, :]
-                    else:
-                        result[self.FFT_dict['frequency_bins'][0]:self.FFT_dict['frequency_bins'][1], :] = \
-                            2 * (my_sources[source_idx, :, :] / (np.sum(my_sources[1:, :, :], axis=0))) * sources[0, :, :]
+                    result[self.FFT_dict['frequency_bins'][0]:self.FFT_dict['frequency_bins'][1], :] = \
+                    my_sources[source_idx, :, :]
+
+                    # my_source 不應該使用下邊的方法去 rebuild，很怪。。。
+                    # if source_idx == 0:
+                    #     # 重新建立原始訊號
+                    #     result[self.FFT_dict['frequency_bins'][0]:self.FFT_dict['frequency_bins'][1], :] = \
+                    #         my_sources[0, :, :]
+                    # else:
+                    #     result[self.FFT_dict['frequency_bins'][0]:self.FFT_dict['frequency_bins'][1], :] = \
+                    #         2 * (my_sources[source_idx, :, :] / (np.sum(my_sources[1:, :, :], axis=0))) * sources[0, :, :]
 
                 else:  # Wienner_mask==False
                     result[self.FFT_dict['frequency_bins'][0]:self.FFT_dict['frequency_bins'][1], :] = \
