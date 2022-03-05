@@ -65,6 +65,10 @@ class LatentAnalyzer:
 
         self.node_representation = node_representation
 
+    def plot_claen_avg_fft(self):
+        plt.plot(self._get_all_neuron_fft_avg())
+        plt.show()
+
     def plot_all_neuron_fft_representation(self, limit=0):
         encoder = self.encoder
         net = self.net
@@ -229,7 +233,7 @@ class LatentAnalyzer:
         else:
             thres = self.get_otsu_threshold()
 
-        print(f"otsu threshold (freq_tick={freq_tick}):", thres)
+        print(f"otsu threshold (is freq_tick={freq_tick}):", thres)
 
         if x_log_scale:
             ax = plt.gca()
@@ -257,7 +261,7 @@ class LatentAnalyzer:
             plt.plot(_orignal_draw_target, color='C0', alpha=0.5)
         if plot_otsu:
             plt.axvline(x=thres, color='green', alpha=0.5)
-            plt.axvline(x=0, color='red', alpha=0.5, linewidth=1)
+            #plt.axvline(x=0, color='red', alpha=0.5, linewidth=1)
         if plot_otsu and plot_axvline != 0.0:
             print("[warn]: 請選擇一個 垂直線 繪製!!")
         if plot_axvline != 0.0:
@@ -277,17 +281,41 @@ class LatentAnalyzer:
         assert avg_spectrum.ndim == 1  # 資料必須是一維
 
         # 測試這樣搞 O不OK
-        avg_spectrum = np.clip(avg_spectrum, 0, 255)
+        #avg_spectrum = np.clip(avg_spectrum, 0, 255)
+        # 計算是否超過範圍，計算 縮放factor = 255/(最大-最小)
+        r_factor = 255/(np.max(avg_spectrum)-np.min(avg_spectrum))
+
+        recaling_avg_spectrum = None
+        if (r_factor < 1) or (np.max(avg_spectrum) > 255.0):
+            recaling_avg_spectrum = avg_spectrum.copy()
+            # 改成 先 shift (- min)
+            r_shift = np.min(avg_spectrum)
+            recaling_avg_spectrum = recaling_avg_spectrum - r_shift
+            # 再 rescaling 範圍。
+            recaling_avg_spectrum = recaling_avg_spectrum * r_factor
+            #
+            print(f"[warn]: 重縮放factor因子: {r_factor}, shift: {r_shift}")
+
+        original_avg_spectrum = None
+        if recaling_avg_spectrum is not None:
+            original_avg_spectrum = avg_spectrum.copy()
+            avg_spectrum = recaling_avg_spectrum
+
 
         for _ in avg_spectrum:
-            assert 0 <= _ <= 255  # 數值必需在 0~255，因為 cv2 的算法只支援到 uint8
-            if (0 < _ < 255) is False:
+            assert 0.0 <= _ <= 255.0  # 數值必需在 0~255，因為 cv2 的算法只支援到 uint8
+            if (0.0 <= _ <= 255.0) is False:
                 print("max:", np.max(avg_spectrum))
                 print("min:", np.min(avg_spectrum))
+                raise ValueError("發現內部數值 不界於 [0~255]")
 
         for_otsu_dtype = np.array(avg_spectrum, dtype=np.uint8)
 
         ret, _ = cv2.threshold(for_otsu_dtype, 1, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+        if recaling_avg_spectrum is not None:
+            # 復原成原本的數值
+            ret = ret * (1/r_factor) + r_shift
 
         return ret
 
@@ -472,10 +500,10 @@ class LatentAnalyzer:
 
         def draw_all_peaks():
             _d_peaks_idx, _ = find_peaks(signal, height=0)
-            plt.title("All peaks show")
+            plt.title("All peaks show :)")
             plt.plot(signal)
-            plt.plot(_d_peaks_idx, signal[_d_peaks_idx], ".")
-            #plt.show()
+            #plt.plot(_d_peaks_idx, signal[_d_peaks_idx], ".")
+            plt.show()
 
         if show_all_peaks:
             draw_all_peaks()

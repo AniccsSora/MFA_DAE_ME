@@ -35,7 +35,7 @@ parser.add_argument('--optim', type=str, default="Adam", help='optimizer for tra
 parser.add_argument('--batch_size', type=int, default=32, help='batch size for training (default: 32)')
 parser.add_argument('--lr', type=float, default=1e-4, help='initial learning rate for training (default: 1e-3)')
 parser.add_argument('--CosineAnnealingWarmRestarts', type=bool, default=True, help='optimizer scheduler for training')
-parser.add_argument('--epochs', type=int, default=100, help='number of epochs to train (default: 10)')
+parser.add_argument('--epochs', type=int, default=50, help='number of epochs to train (default: 10)')
 parser.add_argument('--grad_scale', type=float, default=8, help='learning rate for wage delta calculation')
 parser.add_argument('--seed', type=int, default=117, help='random seed (default: 1)')
 
@@ -89,12 +89,12 @@ grad_scale = args.grad_scale
 # Default model dictionary
 DAE_C_dict = {
         "frequency_bins": [0, 300],
+        # "encoder": [32, 16, 8],
+        # "decoder": [8, 16, 32, 1],
         "encoder": [32, 16, 8],
-        "decoder": [8, 16, 32, 1],
-        # "encoder": [32, 16, 8, 2],
-        # "decoder":  [2, 4, 8, 12, 16, 20, 24, 28,  32, 1],
+        "decoder":  [8, 16, 32, 1],
         "encoder_filter": [[1, 3], [1, 3], [1, 3]],
-        "decoder_filter": [[1, 3], [1, 3], [1, 3], [1, 1]],
+        "decoder_filter": [[1, 3], [1, 3], [1, 3],  [1, 1]],
         "encoder_act": "relu",
         "decoder_act": "relu",
         "dense": [],
@@ -169,8 +169,8 @@ if __name__ == "__main__":
                                                       args=args)
     #
     # train
-    net = train.train(train_loader_list[0], net, args, logger)
-    #net.load_state_dict(torch.load(r"./log/DAE_C/latest.pt"))
+    #net = train.train(train_loader_list[0], net, args, logger)
+    net.load_state_dict(torch.load(r"./log/DAE_C/latest.pt"))
 
     # 全新物件，全新感受
     LA = LatentAnalyzer(net, train_loader_list[0],
@@ -179,18 +179,19 @@ if __name__ == "__main__":
     # 這個會繪製 每個 neuron 的值與 fft 輸出。
     # me.analysis_latent_space_representation(net, train_loader_list[0])
     #LA.plot_all_fft_latent_neuron_peaks(limit=100)
-    #LA.plot_all_neuron_fft_representation(limit=100)
+    #LA.plot_all_neuron_fft_representation(limit=500)
 
     # 繪製 加權平均 fft
     LA.fft_plot_length = 'All'  # 或者使用 'All'
     # LA.plot_avg_fft(plot_otsu=True, plot_axvline=0, freq_tick=False)
-    LA.plot_avg_fft(plot_otsu=True, plot_axvline=0, freq_tick=False,
-                    x_log_scale=False, smooth=True)
-    #plt.show()
+    LA.plot_claen_avg_fft()
+    LA.plot_avg_fft(plot_otsu=True, plot_axvline=0, freq_tick=True,
+                    x_log_scale=False, smooth=False)
+    plt.show()
 
     # 分析 波峰
     LA._plot_signal_peak()
-    # plt.show()
+    plt.show()
 
     # Source Separation by MFA analysis.
     mfa = MFA.MFA_source_separation(net, FFT_dict=FFT_dict, args=args)
@@ -199,6 +200,7 @@ if __name__ == "__main__":
     l, h = LA.get_binearlization_latent_matrix()
     plt.clf()
     plt.figure(dpi=1200)
+    plt.suptitle("Otsu thresholding")
     fig, (latent_repre, l_plot, h_plot) = plt.subplots(1, 3)
     latent_repre.set_title('latent representation')
     latent_repre.imshow(l+h)

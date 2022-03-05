@@ -27,7 +27,7 @@ def train(train_loader, net=None, args=None, logger=None):
     mse = nn.MSELoss()
     if args.CosineAnnealingWarmRestarts:
         print("cos")
-        train_scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=50, T_mult=2, verbose=True)
+        train_scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=5, T_mult=2, verbose=True)
 
     # scheduler_RLROP = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min',
     #                                                  patience=5,
