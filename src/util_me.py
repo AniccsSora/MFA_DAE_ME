@@ -55,16 +55,14 @@ def analysis_plot_neuron_representation(_1d_tensor, save_name, audio_total_sec, 
     pick_vline = np.argmax(draw_val)
     plt.axvline(x=pick_vline, color='red', linewidth=1)
     ax.set_title(f"fft latent representation, p={pick_vline}")
-
+    #
     ax = plt.subplot(224)
     ax.set_title("fft latent representation (log10)")
     _ = np.abs(np.fft.fft(_1d_tensor_short_log10))
     # _ = np.log10(_)  # ------------------------------------  取 log
     plt.plot(_[1:len(_)//2+1])  # 不使用 fft 第 0 個的數值
-
     #
     plt.tight_layout()
-
     #
     dir_name = './latent_code_fft_analysis'
     os.makedirs(dir_name, exist_ok=True)

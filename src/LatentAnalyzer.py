@@ -16,18 +16,20 @@ class LatentAnalyzer:
     """
     latent neuron node 訊號分析
     """
-    def __init__(self, net, dataloader, audio_length, audio_analysis_used):
+    def __init__(self, net, dataloader, audio_length, audio_analysis_used, args):
         self.net = net
         self.dataloader = dataloader
         self.audio_length = audio_length  # 秒數
         self.audio_analysis_used = audio_analysis_used
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.args = args
         # --------------------- 後續參數
         self.encoder = None
         self.node_representation = None
         self.fft_plot_length = 'all'
         self._latent_n_number = 2400  # 模型的 latent neuron 數量
         self._sample_rate = 8000
+        self.fig_folder = "plot_figures"
         # ---------------------  static 表示 特殊靜態變數，如要安全取用，請呼叫他的更新
         self.__static_all_neuron_fft_avg_ = None
         self.__rfft_freq = None
@@ -40,6 +42,9 @@ class LatentAnalyzer:
         if torch.cuda.is_available():
             self.net.cuda(self.device)
         self.encoder = self.net.encoder
+
+        #
+        os.makedirs(f"{self.args.logdir}/{self.fig_folder}")
 
     def _set_node_representation(self, replace_zero=True):
         """
@@ -66,8 +71,23 @@ class LatentAnalyzer:
         self.node_representation = node_representation
 
     def plot_claen_avg_fft(self):
+        plt.clf()
+        plt.title("avg fft")
+        plt.tick_params(
+            axis='x',  # changes apply to the x-axis
+            which='both',  # both major and minor ticks are affected
+            bottom=False,  # ticks along the bottom edge are off
+            top=False,  # ticks along the top edge are off
+            labelbottom=False)
         plt.plot(self._get_all_neuron_fft_avg())
-        plt.show()
+        plt.tight_layout()
+        plt.savefig(
+            pjoin(
+                pjoin(self.args.logdir, self.fig_folder),
+                "clean_avg_fft.png")
+        )
+
+
 
     def plot_all_neuron_fft_representation(self, limit=0):
         encoder = self.encoder
@@ -82,6 +102,7 @@ class LatentAnalyzer:
                 break
 
     def plot_all_fft_latent_neuron_peaks(self, limit=0):
+        plt.clf()
         encoder = self.encoder
         net = self.net
         if limit == 0:
@@ -110,7 +131,7 @@ class LatentAnalyzer:
             # 繪製對用於原始訊號位置的 peaks
             #plt.plot(res_freq[new_peaks_idx], res_no_smooth[new_peaks_idx], "o", color='red')
             #plt.show()
-            dir_name = './latent_code_fft_peaks (smoooth)'
+            dir_name = 'latent_code_fft_peaks (smoooth)'
             os.makedirs(dir_name, exist_ok=True)
             save_name = pjoin(dir_name, str(idx)+'.png')
             plt.savefig(save_name)
@@ -225,7 +246,9 @@ class LatentAnalyzer:
 
         return all_node_fft_avg, freq
 
-    def plot_avg_fft(self, plot_otsu=True, plot_axvline=0.0, freq_tick=True, x_log_scale=True, smooth=True):
+    def plot_avg_fft(self, plot_otsu=True, plot_axvline=0.0,
+                     freq_tick=True, x_log_scale=True, smooth=True,
+                     save_name=""):
         plt.clf()
         # 這個 thres 是拿來畫在 fft 上的，不一定會用到。
         if freq_tick:
@@ -239,7 +262,7 @@ class LatentAnalyzer:
             ax = plt.gca()
             ax.set_xscale('log')
 
-        plt.title(f"Latent layer neuron fft avg (otsu threshold: {thres})")
+        #plt.title(f"Latent layer neuron fft avg (otsu threshold: {thres})")
         _draw_target, freq = self._get_plot_neuron_fft_avg()
         _orignal_draw_target = np.copy(_draw_target)
         if smooth:
@@ -250,24 +273,34 @@ class LatentAnalyzer:
             #_draw_target = _draw_target[_shift:len(_draw_target)-_shift]
         # 劃出 peak
         self._plot_signal_peak(default_sig=_draw_target)
-
+        plt.title("Average spectrum")
         if freq_tick:
-            ax = plt.gca()
-            ax.set_title("freq. x-tick, FFT (smooth v.s. original)")
-            plt.plot(freq, _draw_target)
+            plt.plot(freq, _draw_target)  # draw smooth
             plt.plot(freq, _orignal_draw_target, color='C0', alpha=0.5)
         else:
             plt.plot(_draw_target)
             plt.plot(_orignal_draw_target, color='C0', alpha=0.5)
         if plot_otsu:
-            plt.axvline(x=thres, color='green', alpha=0.5)
+            ax = plt.gca()
+            ax.set_title("Average spectrum (Otsu cut)")
+            plt.axvline(x=thres, color='green', alpha=0.5, linestyle='--', label=f'Otsu threshold = {thres}')
             #plt.axvline(x=0, color='red', alpha=0.5, linewidth=1)
+            plt.legend(loc=0)
         if plot_otsu and plot_axvline != 0.0:
             print("[warn]: 請選擇一個 垂直線 繪製!!")
         if plot_axvline != 0.0:
             plt.axvline(x=plot_axvline, color='green', alpha=0.5)
             plt.axvline(x=thres, color='red', alpha=0.2)
-
+        ax = plt.gca()
+        ax.spines[['top', 'right']].set_visible(False)
+        plt.tight_layout()
+        if save_name == "":
+            save_name = "avg_spectrum (otsu)"
+        plt.savefig(
+            pjoin(
+                pjoin(self.args.logdir, self.fig_folder),
+                f"{save_name}.png"
+            ))
 
     def _smooth_signal(self, sig):
         win = scipy.signal.windows.hann(10)
@@ -475,6 +508,7 @@ class LatentAnalyzer:
         """
         Returns: 分析 neuron 的 訊號突出點，並返回
         """
+        plt.clf()
         # peak_prominences()  # 計算峰值的突出度
         # find_peaks()  # 尋找波峰
         if default_sig is None:
@@ -489,7 +523,6 @@ class LatentAnalyzer:
                                   height=0)  # height= ([最小高度], [最大高度])
         prominences = peak_prominences(signal, peaks_idx)[0]  # 計算突出值
         contour_heights = signal[peaks_idx] - prominences  # 突出線條
-        plt.clf()
         plt.title("Filter Peaks show")
         plt.plot(signal)
         # plt.vlines(x=peaks_idx, ymin=contour_heights, ymax=signal[peaks_idx])
