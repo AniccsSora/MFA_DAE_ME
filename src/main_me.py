@@ -36,7 +36,7 @@ parser.add_argument('--optim', type=str, default="Adam", help='optimizer for tra
 parser.add_argument('--batch_size', type=int, default=32, help='batch size for training (default: 32)')
 parser.add_argument('--lr', type=float, default=1e-4, help='initial learning rate for training (default: 1e-3)')
 parser.add_argument('--CosineAnnealingWarmRestarts', type=bool, default=True, help='optimizer scheduler for training')
-parser.add_argument('--epochs', type=int, default=500, help='number of epochs to train (default: 10)')
+parser.add_argument('--epochs', type=int, default=50, help='number of epochs to train (default: 10)')
 parser.add_argument('--grad_scale', type=float, default=8, help='learning rate for wage delta calculation')
 parser.add_argument('--seed', type=int, default=117, help='random seed (default: 1)')
 
@@ -94,7 +94,7 @@ DAE_C_dict = {
         # "decoder": [8, 16, 32, 1],
         "encoder": [32, 16, 8],
         "decoder":  [8, 16, 32, 1],
-        "encoder_filter": [[1, 3], [1, 3], [1, 3]],
+        "encoder_filter": [[3, 3], [3, 3], [3, 3]],
         "decoder_filter": [[1, 3], [1, 3], [1, 3],  [1, 1]],
         "encoder_act": "relu",
         "decoder_act": "relu",

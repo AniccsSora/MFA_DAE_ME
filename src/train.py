@@ -14,14 +14,14 @@ import matplotlib.pyplot as plt
 
 
 def non_zero_loss(latent, device, alpha=1.0):
-    with torch.no_grad():
-        latent = latent.view(-1, )
-        # latent 批次 總元素量
-        total_size = latent.size(dim=0)
-        # latetn 批次 為 0 的元素數量。
-        is_zero = len((latent == 0).nonzero())
-        loss = alpha * (is_zero/total_size)
-        return loss
+    #with torch.no_grad():
+    latent = latent.view(-1, )
+    # latent 批次 總元素量
+    total_size = latent.size(dim=0)
+    # latetn 批次 為 0 的元素數量。
+    is_zero = len((latent == 0).nonzero())
+    loss = alpha * (is_zero/total_size)
+    return loss
 
 def train(train_loader, net=None, args=None, logger=None):
     best_acc, old_file = 0, None
@@ -65,9 +65,9 @@ def train(train_loader, net=None, args=None, logger=None):
             optimizer.zero_grad()
             output = net(data)
             latent = net.encoder(data)
-            #loss_beta = non_zero_loss(latent, device, alpha=1.0)#
-            #figure_recoder_loss_beta.append(loss_beta)
-            loss = mse(output, data)  # +loss_beta
+            loss_beta = non_zero_loss(latent, device, alpha=1.0)#
+            figure_recoder_loss_beta.append(loss_beta)
+            loss = mse(output, data) + loss_beta
 
             avg_batch_loss +=loss
             loss.backward()
@@ -103,7 +103,7 @@ def train(train_loader, net=None, args=None, logger=None):
                                 connectionstyle="arc3,rad=-0.3",
                                 ),
                 )
-    ax.annotate("{:.4f}".format(pt_2),
+    ax.annotate("{:.1e}".format(pt_2),
                 xy=(args.epochs, pt_2),
                 textcoords='offset pixels', xytext=(120, -200),
                 arrowprops=dict(arrowstyle="->",
@@ -116,10 +116,10 @@ def train(train_loader, net=None, args=None, logger=None):
     plt.savefig(pjoin(args.logdir, 'loss.png'))
     #
     # 繪製 額外的 loss
-    # plt.clf()
-    # plt.yscale('log')
-    # plt.plot(figure_recoder_loss_beta)
-    # plt.tight_layout()
-    # plt.savefig(pjoin(args.logdir, 'loss_beta.png'))
+    plt.clf()
+    plt.yscale('log')
+    plt.plot(figure_recoder_loss_beta)
+    plt.tight_layout()
+    plt.savefig(pjoin(args.logdir, 'loss_beta.png'))
 
     return net
