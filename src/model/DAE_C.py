@@ -28,6 +28,7 @@ class Encoder(nn.Module):
 
     def __init__(self, model_dict=None, padding="same", args=None, logger=None):
         super(Encoder, self).__init__()
+        self.args = args
         self.model_dict = model_dict
         self.padding = padding
         self.feature_dim = self.model_dict['frequency_bins'][1] - self.model_dict['frequency_bins'][0]
@@ -36,6 +37,7 @@ class Encoder(nn.Module):
         self.encoder_filter = self.model_dict['encoder_filter']
         self.dense_layer = self.model_dict['dense']
         self.conv_layers = self._make_layers()
+
 
         if(len(self.dense_layer)!=0):
             if(self.padding=="same"):
@@ -56,12 +58,32 @@ class Encoder(nn.Module):
 
         for i in range(0, len(self.encoder_layer)):
             out_channels = self.encoder_layer[i]
-            pad_layer = nn.ZeroPad2d(padding=(0, self.encoder_filter[i][1]-1, 0, self.encoder_filter[i][0]-1))
+            (left_, right_, top_, bottom_) = (0, self.encoder_filter[i][1]-1,
+                                              0, self.encoder_filter[i][0]-1)
+            pad_layer = nn.ZeroPad2d(padding=(left_, right_, top_, bottom_))
             if(self.padding=="same"):
                 layers.append(pad_layer)
-            encoder_layer = nn.Conv2d(in_channels, out_channels, kernel_size = (self.encoder_filter[i][0], self.encoder_filter[i][1]), stride = (1,1), padding = 0, bias = True)
+            #
+            #  groups == in_channels and out_channels == K * in_channels,
+            #  where K is a positive integer, this operation
+            #  is also known as a “depthwise convolution”.
+            assert self.args is not None
+            if self.args.depthwiseConv is True:
+                K = self.args.depthwiseConv_K
+                encoder_layer = nn.Conv2d(in_channels, K * in_channels,
+                                          kernel_size=(self.encoder_filter[i][0],
+                                                       self.encoder_filter[i][1]),
+                                          stride=(1, 1), padding=0, bias=True, groups=in_channels)
+            else:
+                encoder_layer = nn.Conv2d(in_channels, out_channels,
+                                          kernel_size=(self.encoder_filter[i][0],
+                                                       self.encoder_filter[i][1]),
+                                          stride=(1, 1), padding=0, bias=True, groups=1)
 
-            in_channels = out_channels
+            if self.args.depthwiseConv is True:
+                in_channels = K * in_channels
+            else:
+                in_channels = out_channels
             layers.append(encoder_layer)
             layers.append(ACT(self.encoder_act))
 
@@ -150,7 +172,7 @@ class autoencoder(nn.Module):
         else:
             self.model_dict = model_dict
         self.feature_dim = self.model_dict['frequency_bins'][1] - self.model_dict['frequency_bins'][0]
-        self.encoder = Encoder(self.model_dict)
+        self.encoder = Encoder(self.model_dict, args=args)
         self.decoder = Decoder(self.model_dict)
 
 

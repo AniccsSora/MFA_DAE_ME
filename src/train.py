@@ -13,13 +13,15 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 
 
-def non_zero_loss(latent, device, alpha=1.0):
+def non_zero_loss(latent, device, alpha=1.0, tolerate=0.125):
     #with torch.no_grad():
     latent = latent.view(-1, )
     # latent 批次 總元素量
     total_size = latent.size(dim=0)
     # latetn 批次 為 0 的元素數量。
     is_zero = len((latent == 0).nonzero())
+    is_zero = is_zero-(tolerate*total_size)
+    is_zero = is_zero if is_zero > 0 else 0.0
     loss = alpha * (is_zero/total_size)
     return loss
 
@@ -38,7 +40,8 @@ def train(train_loader, net=None, args=None, logger=None):
     if args.CosineAnnealingWarmRestarts:
         # T_0: 何時執行第一次重啟。
         # T_mult: 後續的重啟時間的乘法因子
-        the_first_restart = int(args.epochs*0.08)
+        alpha_ = args.epochs/50
+        the_first_restart = int(args.epochs*(0.08/alpha_))
         T_mult = 2
         print(f"CosineAnnealingWarmRestarts: T_0:{the_first_restart}, T_mult:{T_mult}")
         train_scheduler = optim.lr_scheduler.\
@@ -51,6 +54,7 @@ def train(train_loader, net=None, args=None, logger=None):
     #                                                 verbose=True)
     figure_recoder_loss = []
     figure_recoder_loss_beta = []
+    beta_loss = False  # 使用自己設計的額外 loss function
     figure_recoder_lr = []
     old_file = 0
     __loss = None
@@ -64,10 +68,11 @@ def train(train_loader, net=None, args=None, logger=None):
             data = Variable(data)
             optimizer.zero_grad()
             output = net(data)
-            latent = net.encoder(data)
-            loss_beta = non_zero_loss(latent, device, alpha=1.0)#
-            figure_recoder_loss_beta.append(loss_beta)
-            loss = mse(output, data) + loss_beta
+            if beta_loss:
+                latent = net.encoder(data)
+                loss_beta = non_zero_loss(latent, device, alpha=1.0)
+                figure_recoder_loss_beta.append(loss_beta)
+            loss = mse(output, data)# + loss_beta
 
             avg_batch_loss +=loss
             loss.backward()
@@ -116,10 +121,11 @@ def train(train_loader, net=None, args=None, logger=None):
     plt.savefig(pjoin(args.logdir, 'loss.png'))
     #
     # 繪製 額外的 loss
-    plt.clf()
-    plt.yscale('log')
-    plt.plot(figure_recoder_loss_beta)
-    plt.tight_layout()
-    plt.savefig(pjoin(args.logdir, 'loss_beta.png'))
+    if beta_loss:
+        plt.clf()
+        plt.yscale('log')
+        plt.plot(figure_recoder_loss_beta)
+        plt.tight_layout()
+        plt.savefig(pjoin(args.logdir, 'loss_beta.png'))
 
     return net

@@ -36,7 +36,7 @@ parser.add_argument('--optim', type=str, default="Adam", help='optimizer for tra
 parser.add_argument('--batch_size', type=int, default=32, help='batch size for training (default: 32)')
 parser.add_argument('--lr', type=float, default=1e-4, help='initial learning rate for training (default: 1e-3)')
 parser.add_argument('--CosineAnnealingWarmRestarts', type=bool, default=True, help='optimizer scheduler for training')
-parser.add_argument('--epochs', type=int, default=50, help='number of epochs to train (default: 10)')
+parser.add_argument('--epochs', type=int, default=50 , help='number of epochs to train (default: 10)')
 parser.add_argument('--grad_scale', type=float, default=8, help='learning rate for wage delta calculation')
 parser.add_argument('--seed', type=int, default=117, help='random seed (default: 1)')
 
@@ -50,6 +50,11 @@ parser.add_argument('--clustering_alg', type=str, default='NMF', choices=['NMF',
 parser.add_argument('--wienner_mask', type=bool, default=True, help='wienner time-frequency mask for output')
 #
 parser.add_argument('--fix_thres', type=int, default=-1)
+#
+parser.add_argument('--time_convolution', type=bool, default=False)
+#
+parser.add_argument('--depthwiseConv', type=bool, default=False)
+parser.add_argument('--depthwiseConv_K', type=int, default=2, help='activate when depthwiseConv is True')
 
 args = parser.parse_args()
 args.cuda = torch.cuda.is_available()
@@ -94,7 +99,7 @@ DAE_C_dict = {
         # "decoder": [8, 16, 32, 1],
         "encoder": [32, 16, 8],
         "decoder":  [8, 16, 32, 1],
-        "encoder_filter": [[3, 3], [3, 3], [3, 3]],
+        "encoder_filter": [[1, 3], [1, 3], [1, 3]],
         "decoder_filter": [[1, 3], [1, 3], [1, 3],  [1, 1]],
         "encoder_act": "relu",
         "decoder_act": "relu",
@@ -132,9 +137,14 @@ FFT_dict = {
     'Win_length': 2048,  # 2048
     'normalize': True,
 }
+
+assert FFT_dict['frequency_bins'][1] == DAE_C_dict['frequency_bins'][1]  # 防呆 必須同值
+
 # declare model object
 net = Model[args.model_type](model_dict=model_dict[args.model_type], args=args, logger=logger).cuda()
-
+#
+torch.backends.cudnn.deterministic = True
+print(f"torch.backends.cudnn.deterministic:{torch.backends.cudnn.deterministic}")
 # torch setting random seed.
 torch.manual_seed(args.seed)
 
@@ -153,6 +163,7 @@ if __name__ == "__main__":
 
     # data loader
     test_filelist = ["./dataset/4_1.wav"]
+    # 121_1b1_Tc_sc_Meditron
     #test_filelist = ["./dataset/4_1_5sec.wav"]
     #test_filelist = ["./dataset/senpai_data/heart_lung_sam2/mix/training_noise_呼吸/0dB/4_1.wav"]
     #test_filelist = ["./dataset/senpai_data/heart_lung_sam2/mix/training_noisy_心肺/6dB/3_0.wav"]
@@ -176,8 +187,8 @@ if __name__ == "__main__":
                                                       args=args)
     #
     # train
-    net = train.train(train_loader_list[0], net, args, logger)
-    #net.load_state_dict(torch.load(r"./log/DAE_C/latest.pt"))
+    #net = train.train(train_loader_list[0], net, args, logger)
+    net.load_state_dict(torch.load(r"./log/DAE_C_2022_0308_1351_09_nice/latest.pt"))
 
     # 全新物件，全新感受
     LA = LatentAnalyzer(net, train_loader_list[0],
@@ -206,25 +217,8 @@ if __name__ == "__main__":
     # Source Separation by MFA analysis.
     mfa = MFA.MFA_source_separation(net, FFT_dict=FFT_dict, args=args)
 
-    # 用自己分析 latent matrix，新版
-    l, h = LA.get_binearlization_latent_matrix()
-    plt.clf()
-    plt.suptitle("Otsu thresholding")
-    fig, (latent_repre, l_plot, h_plot) = plt.subplots(1, 3)
-    latent_repre.set_title('latent representation', pad=24)
-    latent_repre.imshow(l+h)
-    l_plot.set_title('l', pad=24)
-    l_plot.imshow(l)
-    h_plot.set_title('h', pad=24)
-    h_plot.imshow(h)
-    plt.suptitle("Representation split")
-    plt.tight_layout()
-    # 取得格林威治偏移秒
-    _glin = str(int(time.mktime(time.localtime())))
-    os.makedirs(f"latent_representation_ana", exist_ok=True)
-    plt.savefig(f'{args.logdir}/plot_figures/latent_representation_ana.png')  # hard-code
-    plt.savefig(f'./latent_representation_ana/{_glin}.png')
-    #plt.show()
+    l, h = LA.splited_latent_representation()
+    plt.show()
 
     # 使用固定 thres
     # fix_thres = LA.get_otsu_threshold()
@@ -233,9 +227,22 @@ if __name__ == "__main__":
     #                                                             plot=True,
     #                                                             plot_otsu=True)
 
+    # # #
+    l_alt, h_alt = None, None
+    if l.sum() < h.sum():
+        l_alt, h_alt = h.copy(), l.copy()
+    else:
+        l_alt, h_alt = l.copy(), h.copy()
+    l_max = np.max(l_alt)
+    l_alt, h_alt = l_alt - h_alt, h
+    l_alt = np.clip(l_alt, 0, l_max)
+
     # 將資料注入到 mfa 物件去做繪製。
-    mfa.low_thersh_encode_img = torch.tensor(l.T, device='cuda')
-    mfa.high_thersh_encode_img = torch.tensor(h.T, device='cuda')
+    # mfa.low_thersh_encode_img = torch.tensor(l.T, device='cuda')
+    # mfa.high_thersh_encode_img = torch.tensor(h.T, device='cuda')
+    #
+    mfa.low_thersh_encode_img = torch.tensor(l_alt.T, device='cuda')
+    mfa.high_thersh_encode_img = torch.tensor(h_alt.T, device='cuda')
 
     for test_file in test_filelist:
         # load test data

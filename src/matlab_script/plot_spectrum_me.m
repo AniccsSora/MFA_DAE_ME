@@ -13,23 +13,24 @@ exp_path = '.\exp_fig\';
 %---- 路徑設定
 % home_windows ='D:\Git'
 % school_windows='D:\git-repo'
-prj_path="D:\Git";  % 專案位置  //linux : /home/user/git-repo,  
+prj_path="D:\\git-repo";  % 專案位置  //linux : /home/user/git-repo,  
 % ---------------------------------------------------------------
-timestamp_foldern='DAE_C_2022_0307_2256_01'; % log 下 時戳資料夾名
+timestamp_foldern='DAE_C_2022_0308_1700_00'; % log 下 時戳資料夾名
+wav_name='121_1b1_Tc_sc_Meditron'; % 音訊名稱
 %
 origin_path=fullfile(prj_path,'MFA_DAE_ME','src','dataset'); % 無損 source 根目錄
 % 重建後音源
 recons_path=fullfile(prj_path,'MFA_DAE_ME','src','log',timestamp_foldern,'test_reconstruct');
-s1_path=fullfile(prj_path,'MFA_DAE_ME','src','log',timestamp_foldern,'test_my_source1'); % test_my_source1, test_source1
-s2_path=fullfile(prj_path,'MFA_DAE_ME','src','log',timestamp_foldern,'test_my_source2'); % test_my_source2, test_source2
+s1_path=fullfile(prj_path,'MFA_DAE_ME','src','log',timestamp_foldern,'test_source1'); % test_my_source1, test_source1
+s2_path=fullfile(prj_path,'MFA_DAE_ME','src','log',timestamp_foldern,'test_source2'); % test_my_source2, test_source2
 s3_path=fullfile(prj_path,'MFA_DAE_ME','src','log',timestamp_foldern,'test_source3');
 lab_dir_name='';  % 比照 python 內的 lab_dir_name 資料夾變數，如沒設定可以為空
 
-origin=fullfile(origin_path, '4_1.wav'); % 重建出來的 wav name
-recons=fullfile(recons_path, lab_dir_name, '4_1.wav');
-source1 =fullfile(s1_path, lab_dir_name,'4_1.wav');
-source2 =fullfile(s2_path, lab_dir_name,'4_1.wav');
-source3 =fullfile(s3_path, lab_dir_name,'4_1.wav');
+origin=fullfile(origin_path, strcat(wav_name,'.wav')); % 重建出來的 wav name
+recons=fullfile(recons_path, lab_dir_name,  strcat(wav_name,'.wav'));
+source1 =fullfile(s1_path, lab_dir_name, strcat(wav_name,'.wav'));
+source2 =fullfile(s2_path, lab_dir_name, strcat(wav_name,'.wav'));
+source3 =fullfile(s3_path, lab_dir_name, strcat(wav_name,'.wav'));
 
 %%% 不拼路徑，反註解。
 % recons= "/home/user/git-repo/MFA_DAE_20210904_fft/test/_wavresult/reconstruct/test.wav";

@@ -11,6 +11,8 @@ from os.path import join as pjoin
 from tqdm import tqdm
 import cv2
 from matplotlib.scale import FuncScale
+import time
+
 
 class LatentAnalyzer:
     """
@@ -637,7 +639,25 @@ class LatentAnalyzer:
 
         return y
 
-
+    def splited_latent_representation(self):
+        l, h = self.get_binearlization_latent_matrix()
+        plt.clf()
+        plt.suptitle("Otsu thresholding")
+        fig, (latent_repre, l_plot, h_plot) = plt.subplots(1, 3)
+        latent_repre.set_title('latent representation', pad=24)
+        latent_repre.imshow(l + h)
+        l_plot.set_title('l', pad=24)
+        l_plot.imshow(l)
+        h_plot.set_title('h', pad=24)
+        h_plot.imshow(h)
+        plt.suptitle("Representation split")
+        plt.tight_layout()
+        # 取得格林威治偏移秒
+        _glin = str(int(time.mktime(time.localtime())))
+        os.makedirs(f"latent_representation_ana", exist_ok=True)
+        plt.savefig(f'{self.args.logdir}/plot_figures/latent_representation_ana.png')  # hard-code
+        plt.savefig(f'./latent_representation_ana/{_glin}.png')
+        return l, h
 def mel(*a):
     a = np.array(a)
     assert a.ndim == 1
