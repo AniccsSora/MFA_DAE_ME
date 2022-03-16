@@ -1,0 +1,27 @@
+INFO:root:=================FLAGS==================
+INFO:root:model_type: DAE_C
+INFO:root:data_feature: lps
+INFO:root:pretrained: False
+INFO:root:pretrained_path: None
+INFO:root:trainOrtest: train
+INFO:root:optim: Adam
+INFO:root:batch_size: 32
+INFO:root:lr: 0.0001
+INFO:root:CosineAnnealingWarmRestarts: True
+INFO:root:epochs: 50
+INFO:root:grad_scale: 8
+INFO:root:seed: 117
+INFO:root:log_interval: 100
+INFO:root:test_interval: 1
+INFO:root:logdir: log/DAE_C_2022_0308_1700_00
+INFO:root:decreasing_lr: 200,250
+INFO:root:source_num: 3
+INFO:root:clustering_alg: NMF
+INFO:root:wienner_mask: True
+INFO:root:fix_thres: -1
+INFO:root:time_convolution: False
+INFO:root:depthwiseConv: False
+INFO:root:depthwiseConv_K: 2
+INFO:root:cuda: True
+INFO:root:========================================
+INFO:root:decreasing_lr: [200, 250]
