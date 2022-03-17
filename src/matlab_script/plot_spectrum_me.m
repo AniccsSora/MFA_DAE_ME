@@ -15,7 +15,8 @@ exp_path = '.\exp_fig\';
 % school_windows='D:\git-repo'
 prj_path="D:\\git-repo";  % 專案位置  //linux : /home/user/git-repo,  
 % ---------------------------------------------------------------
-timestamp_foldern='DAE_C_2022_0308_1700_00'; % log 下 時戳資料夾名
+timestamp_foldern='DAE_C_2022_0317_2056_28'; % log 下 時戳資料夾名
+
 wav_name='121_1b1_Tc_sc_Meditron'; % 音訊名稱
 %
 origin_path=fullfile(prj_path,'MFA_DAE_ME','src','dataset'); % 無損 source 根目錄
@@ -40,7 +41,7 @@ source3 =fullfile(s3_path, lab_dir_name, strcat(wav_name,'.wav'));
 
 source4 = 'D:\Git\qpzm_mfa_dae\src\log\MFA_ANA\test_source4\0_0_w_off\4_0_0_old_method_關閉wienner_mask_PR20.wav';
 
-my_fig_title='4\_1'; % use class 3
+my_fig_title=wav_name;%'4\_1'; % use class 3
 
 FontSize = 18;
 %  [0.01 0.07 0.98 0.82] 最佳螢幕跳出顯示效果
@@ -170,7 +171,7 @@ set(gca,'FontWeight','bold','fontsize',FontSize,'Fontname','Times New Roman');
 % set(gcf,'Position',[100 100 260 220]);
 % set(gcf,'unit','normalized','Position',[0.2,0.2,0.58,0.26]);
 %---------------------------------------------------------
-sgt=sgtitle(my_fig_title);
+sgt=sgtitle(my_fig_title,'Interpreter','none');
 sgt.FontSize=18;
 sgt.FontName='Times New Roman';
 sgt.FontWeight='bold'; % normal | bold
