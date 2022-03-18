@@ -60,7 +60,7 @@ args = parser.parse_args()
 args.cuda = torch.cuda.is_available()
 #  misc.logger.init(args.logdir, 'train_log_')  # 拒用
 #  logger = misc.logger.info  #  == print()
-misc.ensure_dir(args.logdir)
+misc.ensure_dir(args.logdir)  # 檢查存檔根目錄
 #  取時戳
 current_time = datetime.now().strftime('%Y_%m%d_%H%M_%S')
 #  拚 log 資料夾名
@@ -162,7 +162,7 @@ matplotlib.rcParams['figure.titlesize'] = 'large'
 if __name__ == "__main__":
 
     # data loader
-    test_filelist = ["./dataset/121_1b1_Tc_sc_Meditron.wav"]
+    test_filelist = ["./dataset/123_1b1_Al_sc_Meditron.wav"]
     # 121_1b1_Tc_sc_Meditron
     #test_filelist = ["./dataset/4_1_5sec.wav"]
     #test_filelist = ["./dataset/senpai_data/heart_lung_sam2/mix/training_noise_呼吸/0dB/4_1.wav"]
@@ -187,8 +187,8 @@ if __name__ == "__main__":
                                                       args=args)
     #
     # train
-    #net = train.train(train_loader_list[0], net, args, logger)
-    net.load_state_dict(torch.load(r"./log/DAE_C_2022_0308_1351_09_nice/latest.pt"))
+    net = train.train(train_loader_list[0], net, args, logger)
+    #net.load_state_dict(torch.load(r"./log/DAE_C_2022_0308_1351_09_nice/latest.pt"))
 
     # 全新物件，全新感受
     LA = LatentAnalyzer(net, train_loader_list[0],

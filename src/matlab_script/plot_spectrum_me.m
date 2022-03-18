@@ -15,9 +15,9 @@ exp_path = '.\exp_fig\';
 % school_windows='D:\git-repo'
 prj_path="D:\\git-repo";  % 專案位置  //linux : /home/user/git-repo,  
 % ---------------------------------------------------------------
-timestamp_foldern='DAE_C_2022_0317_2056_28'; % log 下 時戳資料夾名
+timestamp_foldern='DAE_C_2022_0318_1744_17'; % log 下 時戳資料夾名
 
-wav_name='121_1b1_Tc_sc_Meditron'; % 音訊名稱
+wav_name='123_1b1_Al_sc_Meditron'; % 音訊名稱
 %
 origin_path=fullfile(prj_path,'MFA_DAE_ME','src','dataset'); % 無損 source 根目錄
 % 重建後音源

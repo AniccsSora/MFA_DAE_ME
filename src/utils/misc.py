@@ -38,6 +38,7 @@ def ensure_dir(path, erase=False):
         print("Removing old folder {}".format(path))
         shutil.rmtree(path)
     if not os.path.exists(path):
+        print(f"在 {os.path.curdir} 下 建立...")
         print("Creating folder {}".format(path))
         os.makedirs(path)
 
