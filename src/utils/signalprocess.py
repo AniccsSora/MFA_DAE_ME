@@ -30,10 +30,14 @@ def wav2lps(y, FFTSize = 512, Hop_length = 256, Win_length = 512, normalize = Fa
     """
     This function transfer signal from waveform to log power spectrum.
     """
-    if (type(y)==str):
+    if isinstance(y, str):  #(type(y)==str):
         # y = wav filepath of y is signal
         sr, y = wav.read(y)
-        y = y/32767.
+        if y.dtype == np.int16:
+            y = y/32767.
+        else:
+            raise NotImplementedError(f"Not support WAV format. : {y.dtype}")
+
     epsilon = np.finfo(float).eps
     D = librosa.stft(y, n_fft = FFTSize, hop_length = Hop_length, win_length = Win_length, window = scipy.signal.hamming, center = Center)
     D = D + epsilon

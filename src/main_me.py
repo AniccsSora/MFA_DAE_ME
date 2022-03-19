@@ -11,6 +11,7 @@ import train
 from source_separation import MFA
 from torch.utils.data import DataLoader
 from dataset.HLsep_dataloader import hl_dataloader, val_dataloader
+from dataset.multiple_dataloader import hl_multiple_dataloader
 import scipy.io.wavfile as wav
 import os
 from os.path import join as pjoin
@@ -36,7 +37,7 @@ parser.add_argument('--optim', type=str, default="Adam", help='optimizer for tra
 parser.add_argument('--batch_size', type=int, default=32, help='batch size for training (default: 32)')
 parser.add_argument('--lr', type=float, default=1e-4, help='initial learning rate for training (default: 1e-3)')
 parser.add_argument('--CosineAnnealingWarmRestarts', type=bool, default=True, help='optimizer scheduler for training')
-parser.add_argument('--epochs', type=int, default=50 , help='number of epochs to train (default: 10)')
+parser.add_argument('--epochs', type=int, default=50, help='number of epochs to train (default: 10)')
 parser.add_argument('--grad_scale', type=float, default=8, help='learning rate for wage delta calculation')
 parser.add_argument('--seed', type=int, default=117, help='random seed (default: 1)')
 
@@ -60,7 +61,7 @@ args = parser.parse_args()
 args.cuda = torch.cuda.is_available()
 #  misc.logger.init(args.logdir, 'train_log_')  # 拒用
 #  logger = misc.logger.info  #  == print()
-misc.ensure_dir(args.logdir)  # 檢查存檔根目錄
+misc.ensure_dir(args.logdir)  # 檢查存檔根目錄 : /log
 #  取時戳
 current_time = datetime.now().strftime('%Y_%m%d_%H%M_%S')
 #  拚 log 資料夾名
@@ -71,7 +72,6 @@ log_full_path = pjoin(args.logdir, f'log_{current_time}.txt')
 logging.basicConfig(filename=log_full_path, level=logging.INFO, force=True, filemode='w')
 logger = logging.info
 starttime = time.time()
-
 
 logger("=================FLAGS==================")
 for k, v in args.__dict__.items():
@@ -162,7 +162,41 @@ matplotlib.rcParams['figure.titlesize'] = 'large'
 if __name__ == "__main__":
 
     # data loader
-    test_filelist = ["./dataset/123_1b1_Al_sc_Meditron.wav"]
+    test_filelist = ["./dataset/4_1.wav"]
+    _test_filelist = ["./dataset/102_1b1_Ar_sc_Meditron.wav",
+                        "./dataset/121_1p1_Tc_sc_Meditron.wav",
+                        "./dataset/123_1b1_Al_sc_Meditron.wav",
+                        "./dataset/125_1b1_Tc_sc_Meditron.wav",
+                        "./dataset/126_1b1_Al_sc_Meditron.wav",
+                        "./dataset/127_1b1_Ar_sc_Meditron.wav",
+                        "./dataset/136_1b1_Ar_sc_Meditron.wav",
+                        "./dataset/143_1b1_Al_sc_Meditron.wav",
+                        "./dataset/144_1b1_Al_sc_Meditron.wav",
+                        "./dataset/144_1b1_Tc_sc_Meditron.wav",
+                        "./dataset/152_1b1_Al_sc_Meditron.wav",
+                        "./dataset/153_1b1_Al_sc_Meditron.wav",
+                        "./dataset/159_1b1_Al_sc_Meditron.wav",
+                        "./dataset/159_1b1_Ar_sc_Meditron.wav",
+                        "./dataset/159_1b1_Ll_sc_Meditron.wav",
+                        "./dataset/159_1b1_Pr_sc_Meditron.wav",
+                        "./dataset/171_1b1_Al_sc_Meditron.wav",
+                        "./dataset/179_1b1_Al_sc_Meditron.wav",
+                        "./dataset/179_1b1_Tc_sc_Meditron.wav",
+                        "./dataset/182_1b1_Tc_sc_Meditron.wav",
+                        "./dataset/183_1b1_Pl_sc_Meditron.wav",
+                        "./dataset/183_1b1_Tc_sc_Meditron.wav",
+                        "./dataset/184_1b1_Ar_sc_Meditron.wav",
+                        "./dataset/187_1b1_Ll_sc_Meditron.wav",
+                        "./dataset/194_1b1_Lr_sc_Meditron.wav",
+                        "./dataset/194_1b1_Pr_sc_Meditron.wav",
+                        "./dataset/202_1b1_Ar_sc_Meditron.wav",
+                        "./dataset/208_1b1_Ll_sc_Meditron.wav",
+                        "./dataset/209_1b1_Tc_sc_Meditron.wav",
+                        "./dataset/214_1b1_Ar_sc_Meditron.wav",
+                        "./dataset/217_1b1_Tc_sc_Meditron.wav",
+                        "./dataset/224_1b1_Tc_sc_Meditron.wav",
+                        "./dataset/224_1b2_Al_sc_Meditron.wav",
+                        "./dataset/225_1b1_Pl_sc_Meditron.wav"]
     # 121_1b1_Tc_sc_Meditron
     #test_filelist = ["./dataset/4_1_5sec.wav"]
     #test_filelist = ["./dataset/senpai_data/heart_lung_sam2/mix/training_noise_呼吸/0dB/4_1.wav"]
@@ -179,15 +213,24 @@ if __name__ == "__main__":
     #                              args=args)
 
     train_loader_list: List[DataLoader[Any]]
+    # 單一檔案的 dataloader。
     train_loader_list = me.get_model_input_dataloader(test_filelist,
-                                                      shuffle=True,
+                                                      shuffle=False,
                                                       num_workers=0,
                                                       pin_memory=False,
                                                       FFT_dict=FFT_dict,
                                                       args=args)
+    #  用 filename list 製造更長的 dataloader 版本。
+    train_loader_multi_ver = hl_multiple_dataloader(_test_filelist,
+                                                    shuffle=False,
+                                                    args=args,
+                                                    FFT_dict=FFT_dict,
+                                                    add_slient_seq=False
+                                                    )
     #
     # train
-    net = train.train(train_loader_list[0], net, args, logger)
+    net = train.train(train_loader_multi_ver, net, args, logger)  # 只練一個
+    #net = train.train(train_loader_multi_ver, net, args, logger)
     #net.load_state_dict(torch.load(r"./log/DAE_C_2022_0308_1351_09_nice/latest.pt"))
 
     # 全新物件，全新感受

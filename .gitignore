@@ -1,3 +1,6 @@
+/src/dataset/senpai_data/*
+/src/畫圖用/minst/*
+/src/latent_code_fft_analysis/*
 /src/matlab_script/README_HLsep.docx
 training_noisy_心肺/
 src/log/*
