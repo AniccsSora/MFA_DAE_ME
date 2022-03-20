@@ -13,17 +13,17 @@ exp_path = '.\exp_fig\';
 %---- 路徑設定
 % home_windows ='D:\Git'
 % school_windows='D:\git-repo'
-prj_path="D:\\Git";  % 專案位置  //linux : /home/user/git-repo,  
+prj_path="D:\\Git";  % 專案位置  //linux : /home/user/git-repo,
 % ---------------------------------------------------------------
-timestamp_foldern='DAE_C_2022_0319_2339_41'; % log 下 時戳資料夾名
+timestamp_foldern='DAE_C_2022_0321_0052_11'; % log 下 時戳資料夾名
 
-wav_name='123_1b1_Al_sc_Meditron'; % 音訊名稱
+wav_name='121_1b1_Tc_sc_Meditron'; % 音訊名稱
 %121_1b1_Tc_sc_Meditron
 origin_path=fullfile(prj_path,'MFA_DAE_ME','src','dataset'); % 無損 source 根目錄
 % 重建後音源
 recons_path=fullfile(prj_path,'MFA_DAE_ME','src','log',timestamp_foldern,'test_reconstruct');
-s1_path=fullfile(prj_path,'MFA_DAE_ME','src','log',timestamp_foldern,'test_source1'); % test_my_source1, test_source1
-s2_path=fullfile(prj_path,'MFA_DAE_ME','src','log',timestamp_foldern,'test_source2'); % test_my_source2, test_source2
+s1_path=fullfile(prj_path,'MFA_DAE_ME','src','log',timestamp_foldern,'test_my_source1'); % test_my_source1, test_source1
+s2_path=fullfile(prj_path,'MFA_DAE_ME','src','log',timestamp_foldern,'test_my_source2'); % test_my_source2, test_source2
 s3_path=fullfile(prj_path,'MFA_DAE_ME','src','log',timestamp_foldern,'test_source3');
 lab_dir_name='';  % 比照 python 內的 lab_dir_name 資料夾變數，如沒設定可以為空
 
@@ -41,7 +41,7 @@ source3 =fullfile(s3_path, lab_dir_name, strcat(wav_name,'.wav'));
 
 source4 = 'D:\Git\qpzm_mfa_dae\src\log\MFA_ANA\test_source4\0_0_w_off\4_0_0_old_method_關閉wienner_mask_PR20.wav';
 
-my_fig_title=wav_name;%'4\_1'; % use class 3
+my_fig_title='4\_1'; % use class 3
 
 FontSize = 18;
 %  [0.01 0.07 0.98 0.82] 最佳螢幕跳出顯示效果
@@ -171,7 +171,7 @@ set(gca,'FontWeight','bold','fontsize',FontSize,'Fontname','Times New Roman');
 % set(gcf,'Position',[100 100 260 220]);
 % set(gcf,'unit','normalized','Position',[0.2,0.2,0.58,0.26]);
 %---------------------------------------------------------
-sgt=sgtitle(my_fig_title,'Interpreter','none');
+sgt=sgtitle(my_fig_title);
 sgt.FontSize=18;
 sgt.FontName='Times New Roman';
 sgt.FontWeight='bold'; % normal | bold

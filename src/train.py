@@ -13,7 +13,7 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 
 
-def non_zero_loss(latent, device, alpha=1.0, tolerate=0.125):
+def non_zero_loss(latent, device, alpha, tolerate):
     #with torch.no_grad():
     latent = latent.view(-1, )
     # latent 批次 總元素量
@@ -23,6 +23,7 @@ def non_zero_loss(latent, device, alpha=1.0, tolerate=0.125):
     is_zero = is_zero-(tolerate*total_size)
     is_zero = is_zero if is_zero > 0 else 0.0
     loss = alpha * (is_zero/total_size)
+    #print(f"loss: {loss}")
     return loss
 
 def train(train_loader, net=None, args=None, logger=None):
@@ -54,7 +55,7 @@ def train(train_loader, net=None, args=None, logger=None):
     #                                                 verbose=True)
     figure_recoder_loss = []
     figure_recoder_loss_beta = []
-    beta_loss = False  # 使用自己設計的額外 loss function
+    beta_loss = True  # 使用自己設計的額外 loss function
     figure_recoder_lr = []
     old_file = 0
     __loss = None
@@ -70,9 +71,11 @@ def train(train_loader, net=None, args=None, logger=None):
             output = net(data)
             if beta_loss:
                 latent = net.encoder(data)
-                loss_beta = non_zero_loss(latent, device, alpha=1.0)
+                loss_beta = non_zero_loss(latent, device,
+                                          alpha=1.0,  # 超參數
+                                          tolerate=0.0)  # 允許多少比例的 latent represent 為 0
                 figure_recoder_loss_beta.append(loss_beta)
-            loss = mse(output, data)# + loss_beta
+            loss = mse(output, data) + loss_beta
 
             avg_batch_loss +=loss
             loss.backward()

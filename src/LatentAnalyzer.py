@@ -28,6 +28,7 @@ class LatentAnalyzer:
         # --------------------- 後續參數
         self.encoder = None
         self.node_representation = None
+        self.node_representation_Conv_Ver = None
         self.fft_plot_length = 'all'
         self._latent_n_number = 2400  # 模型的 latent neuron 數量
         self._sample_rate = 8000
@@ -369,6 +370,16 @@ class LatentAnalyzer:
             res_freq = res_freq[1:]
 
         return res, res_freq
+
+    def _calc_node_representation_Conv_Ver(self, conv_size=3):
+        #  製造此函原因: 原本的分析都是依照 一條row，但是有可能會出現一條row的頻率變化不明顯的問題。
+        #  那我乾脆合成 "附近幾條row "當作你自己的表示搂~，那這樣會不會讓變化 更好觀察?
+        assert conv_size % 2 == 1  # 比照標準 conv filter 為 odd
+        # 3 => 1 2 1
+        # 5 => 1 2 3 2 1 -- softmax(總合為0) --> 拿到的比例直接 .* 後 sum() 起來。
+        # TODO: New Idea 2022/3/21
+        pass
+
 
     def _neuron_idx_classify(self, fix_thres_threshold=-1, delta=0.0):
         if fix_thres_threshold == -1:
