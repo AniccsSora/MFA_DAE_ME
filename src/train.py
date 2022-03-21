@@ -55,7 +55,7 @@ def train(train_loader, net=None, args=None, logger=None):
     #                                                 verbose=True)
     figure_recoder_loss = []
     figure_recoder_loss_beta = []
-    beta_loss = True  # 使用自己設計的額外 loss function
+    beta_loss = False  # 使用自己設計的額外 loss function
     figure_recoder_lr = []
     old_file = 0
     __loss = None
@@ -75,7 +75,10 @@ def train(train_loader, net=None, args=None, logger=None):
                                           alpha=1.0,  # 超參數
                                           tolerate=0.0)  # 允許多少比例的 latent represent 為 0
                 figure_recoder_loss_beta.append(loss_beta)
-            loss = mse(output, data) + loss_beta
+            if beta_loss:
+                loss = mse(output, data) + loss_beta
+            else:
+                loss = mse(output, data)
 
             avg_batch_loss +=loss
             loss.backward()

@@ -361,7 +361,16 @@ class LatentAnalyzer:
             Returns:
                 針對每個 row 做 real-fft 的結果。
         """
-        _fft = np.fft.rfft(self.node_representation, axis=1)
+        conv_size = self.args.row_representation_convNum
+        if self.node_representation_Conv_Ver is None:
+            self._calc_node_representation_Conv_Ver(conv_size=conv_size)
+
+        if self.args.row_representation_useConvVer:
+            print(f"useConvVer: {conv_size}")
+            _fft = np.fft.rfft(self.node_representation_Conv_Ver, axis=1)
+        else:
+            print("normal process")
+            _fft = np.fft.rfft(self.node_representation, axis=1)
         res = np.abs(_fft)
         res_freq = np.fft.rfftfreq(n=self.node_representation[0].size, d=1. / self._sample_rate)
         self.__rfft_freq = res_freq
@@ -371,22 +380,55 @@ class LatentAnalyzer:
 
         return res, res_freq
 
-    def _calc_node_representation_Conv_Ver(self, conv_size=3):
+    def _calc_node_representation_Conv_Ver(self, conv_size):
         #  製造此函原因: 原本的分析都是依照 一條row，但是有可能會出現一條row的頻率變化不明顯的問題。
         #  那我乾脆合成 "附近幾條row "當作你自己的表示搂~，那這樣會不會讓變化 更好觀察?
         assert conv_size % 2 == 1  # 比照標準 conv filter 為 odd
-        # 3 => 1 2 1
-        # 5 => 1 2 3 2 1 -- softmax(總合為0) --> 拿到的比例直接 .* 後 sum() 起來。
-        # TODO: New Idea 2022/3/21
-        pass
 
+        def get_filter_weight(odd):
+            # 因為 window 頭跟尾巴都是 0，所以多補兩個，後面回傳後會去頭去尾
+            win = scipy.signal.windows.get_window('boxcar', odd + 2, fftbins=False)
+            #return scipy.special.softmax(win[1:-1]).reshape(-1, 1)
+            return win[1:-1].reshape(-1, 1)
+
+
+        if self.node_representation is None:
+            self._set_node_representation()
+
+        #
+        self.node_representation_Conv_Ver = []
+        # filter 的觸及寬度
+        wing = (conv_size-1)//2
+
+        bb = np.pad(self.node_representation,
+                    pad_width=((wing, wing), (0, 0)),  # pad_width=((axis0), (axis1)); axis0=(before, after)
+                    mode='reflect')
+
+        for idx in range(len(self.node_representation)):
+            c = idx  # center
+            _ = np.sum(bb[c: c+2*wing+1] * get_filter_weight(conv_size), axis=0)
+            _ /= conv_size
+            self.node_representation_Conv_Ver.append(_)
+
+        self.node_representation_Conv_Ver = np.array(self.node_representation_Conv_Ver)
 
     def _neuron_idx_classify(self, fix_thres_threshold=-1, delta=0.0):
+        """
+        把兩類的 idx 分開來。
+        ---
+        Args:
+            fix_thres_threshold: 預設 -1時表示由程式自動計算閥值。
+            delta: 如其名
+
+        Returns:
+            high idx, low idx.
+        """
         if fix_thres_threshold == -1:
             threshold = self.get_otsu_threshold()
         else:
             print(f"[warn]: Used the fix threshold = {fix_thres_threshold}.")
             threshold = fix_thres_threshold
+
         every_neuron_fft_peak = self._get_every_node_fft_peak()
         high, low = [], []
         for idx, peak in enumerate(every_neuron_fft_peak):

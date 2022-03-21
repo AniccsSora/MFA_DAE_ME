@@ -37,7 +37,7 @@ parser.add_argument('--optim', type=str, default="Adam", help='optimizer for tra
 parser.add_argument('--batch_size', type=int, default=32, help='batch size for training (default: 32)')
 parser.add_argument('--lr', type=float, default=1e-4, help='initial learning rate for training (default: 1e-3)')
 parser.add_argument('--CosineAnnealingWarmRestarts', type=bool, default=True, help='optimizer scheduler for training')
-parser.add_argument('--epochs', type=int, default=100, help='number of epochs to train (default: 10)')
+parser.add_argument('--epochs', type=int, default=50, help='number of epochs to train (default: 10)')
 parser.add_argument('--grad_scale', type=float, default=8, help='learning rate for wage delta calculation')
 parser.add_argument('--seed', type=int, default=117, help='random seed (default: 1)')
 
@@ -54,8 +54,12 @@ parser.add_argument('--fix_thres', type=int, default=-1)
 #
 parser.add_argument('--time_convolution', type=bool, default=False)
 #
+parser.add_argument('--row_representation_useConvVer', type=bool, default=False)
+parser.add_argument('--row_representation_convNum', type=int, default=11)
+#
 parser.add_argument('--depthwiseConv', type=bool, default=False)
 parser.add_argument('--depthwiseConv_K', type=int, default=2, help='activate when depthwiseConv is True')
+
 
 args = parser.parse_args()
 args.cuda = torch.cuda.is_available()
@@ -161,8 +165,8 @@ matplotlib.rcParams['figure.titlesize'] = 'large'
 
 if __name__ == "__main__":
 
-    # data loader
-    test_filelist = ["./dataset/121_1b1_Tc_sc_Meditron.wav"]
+    # data loader  121_1b1_Tc_sc_Meditron
+    test_filelist = ["./dataset/171_1b1_Al_sc_Meditron.wav"]
     _test_filelist = ["./dataset/102_1b1_Ar_sc_Meditron.wav",
                         "./dataset/121_1p1_Tc_sc_Meditron.wav",
                         "./dataset/123_1b1_Al_sc_Meditron.wav",
@@ -229,9 +233,9 @@ if __name__ == "__main__":
                                                     )
     #
     # train
-    #net = train.train(train_loader_list[0], net, args, logger)  # 只練一個
+    net = train.train(train_loader_list[0], net, args, logger)  # 只練一個
     #net = train.train(train_loader_multi_ver, net, args, logger)
-    net.load_state_dict(torch.load(r"./log/DAE_C_2022_0321_0052_11/latest.pt"))
+    #net.load_state_dict(torch.load(r"./log/DAE_C_2022_0322_0340_24/latest.pt"))
 
     # 全新物件，全新感受
     LA = LatentAnalyzer(net, train_loader_list[0],
@@ -241,7 +245,7 @@ if __name__ == "__main__":
     # 這個會繪製 每個 neuron 的值與 fft 輸出。
     # me.analysis_latent_space_representation(net, train_loader_list[0])
     #LA.plot_all_fft_latent_neuron_peaks(limit=100)
-    #LA.plot_all_neuron_fft_representation(limit=500)
+    #LA.plot_all_neuron_fft_representation(limit=50)
 
     # 繪製 加權平均 fft
     LA.fft_plot_length = 'All'  # 或者使用 'All'
