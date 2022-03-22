@@ -57,6 +57,8 @@ parser.add_argument('--time_convolution', type=bool, default=False)
 parser.add_argument('--row_representation_useConvVer', type=bool, default=False)
 parser.add_argument('--row_representation_convNum', type=int, default=11)
 #
+parser.add_argument('--useRowFilter', type=bool, default=False, help="use smooth filter to each row representation (latent space)")
+#
 parser.add_argument('--depthwiseConv', type=bool, default=False)
 parser.add_argument('--depthwiseConv_K', type=int, default=2, help='activate when depthwiseConv is True')
 
@@ -166,7 +168,7 @@ matplotlib.rcParams['figure.titlesize'] = 'large'
 if __name__ == "__main__":
 
     # data loader  121_1b1_Tc_sc_Meditron
-    test_filelist = ["./dataset/171_1b1_Al_sc_Meditron.wav"]
+    test_filelist = ["./dataset/225_1b1_Pl_sc_Meditron.wav"]
     _test_filelist = ["./dataset/102_1b1_Ar_sc_Meditron.wav",
                         "./dataset/121_1p1_Tc_sc_Meditron.wav",
                         "./dataset/123_1b1_Al_sc_Meditron.wav",
@@ -233,9 +235,9 @@ if __name__ == "__main__":
                                                     )
     #
     # train
-    net = train.train(train_loader_list[0], net, args, logger)  # 只練一個
+    #net = train.train(train_loader_list[0], net, args, logger)  # 只練一個
     #net = train.train(train_loader_multi_ver, net, args, logger)
-    #net.load_state_dict(torch.load(r"./log/DAE_C_2022_0322_0340_24/latest.pt"))
+    net.load_state_dict(torch.load(r"./log/DAE_C_2022_0323_0046_05/latest.pt"))
 
     # 全新物件，全新感受
     LA = LatentAnalyzer(net, train_loader_list[0],
@@ -245,7 +247,7 @@ if __name__ == "__main__":
     # 這個會繪製 每個 neuron 的值與 fft 輸出。
     # me.analysis_latent_space_representation(net, train_loader_list[0])
     #LA.plot_all_fft_latent_neuron_peaks(limit=100)
-    #LA.plot_all_neuron_fft_representation(limit=50)
+    #LA.plot_all_neuron_fft_representation(limit=0)
 
     # 繪製 加權平均 fft
     LA.fft_plot_length = 'All'  # 或者使用 'All'

@@ -370,7 +370,13 @@ class LatentAnalyzer:
             _fft = np.fft.rfft(self.node_representation_Conv_Ver, axis=1)
         else:
             print("normal process")
-            _fft = np.fft.rfft(self.node_representation, axis=1)
+            if self.args.useRowFilter:
+                new_node_representation = scipy.signal.savgol_filter(self.node_representation,
+                                                                     window_length=51,
+                                                                     polyorder=10)  # MUST window > poly
+                _fft = np.fft.rfft(new_node_representation, axis=1)
+            else:
+                _fft = np.fft.rfft(self.node_representation, axis=1)
         res = np.abs(_fft)
         res_freq = np.fft.rfftfreq(n=self.node_representation[0].size, d=1. / self._sample_rate)
         self.__rfft_freq = res_freq
