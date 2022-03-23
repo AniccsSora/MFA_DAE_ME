@@ -43,11 +43,19 @@ class Encoder(nn.Module):
 
         layers = []
         in_channels = self.feature_dim
+        """
+         "encoder":  [32, 16, 8],  -> encoder_layer
+         "decoder":  [8, 16, 32, 1],
+        """
 
         for i in range(0, len(self.encoder_layer)):
             out_channels = self.encoder_layer[i]
-            encoder_layer = nn.Conv2d(in_channels, out_channels, kernel_size = (1, 1), stride = (1, 1), padding = 0, bias = True)
-            bn = nn.BatchNorm2d(out_channels, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True, device=None, dtype=None)
+            encoder_layer = nn.Conv2d(in_channels, out_channels,
+                                      kernel_size=(1, 1), stride=(1, 1),
+                                      padding=0, bias=True)
+            bn = nn.BatchNorm2d(out_channels, eps=1e-05, momentum=0.1,
+                                affine=True, track_running_stats=True,
+                                device=None, dtype=None)
             in_channels = out_channels
 
             layers.append(encoder_layer)
@@ -58,6 +66,7 @@ class Encoder(nn.Module):
 
     def forward(self, x):
         # (1, F, T, 1) Temporal Convolutional
+        x = torch.permute(x, (0, 3, 2, 1))
         x = self.conv_layers(x)
         # transpose
         return x
@@ -77,6 +86,10 @@ class Decoder(nn.Module):
         self.decoder_filter = self.model_dict['decoder_filter']
         self.conv_layers = self._make_layers()
 
+        final_out_channels = self.model_dict["frequency_bins"][1] - self.model_dict["frequency_bins"][0]
+        self.reform_layer = nn.ConvTranspose2d(1, final_out_channels,
+                                               kernel_size=(1, 1), stride=(1, 1),
+                                               padding=0, bias=True)
 
     def _make_layers(self):
 
@@ -99,6 +112,7 @@ class Decoder(nn.Module):
         # (1, F, T, 1) Temporal Convolutional
         x = self.conv_layers(x)
         # transpose
+        x = self.reform_layer(x)
         return x
 
 
@@ -122,27 +136,30 @@ class TC_DAE_C(nn.Module):
                 }
         else:
             self.model_dict = model_dict
+
+
         self.encoder = Encoder(self.model_dict)
         self.decoder = Decoder(self.model_dict)
 
 
-        
     def forward(self, x):
 
         # input (1, F, T, 1)
         y_t = self.encoder(x)
-        print(y_t.shape)
-        #latent shape
-        latent = torch.reshape(y_t, (y_t.shape[1], y_t.shape[2])) # (1, T, F*C)
-        print(latent.shape)
-        latent = torch.reshape(latent, (1, y_t.shape[1], y_t.shape[2], 1)) # (1, T, F*C)
-        print(latent.shape)
-        output = self.decoder(latent)
-
+        # ???
+        # print(y_t.shape)
+        # #latent shape
+        # latent = torch.reshape(y_t, (y_t.shape[1], y_t.shape[2])) # (1, T, F*C)
+        # print(latent.shape)
+        # latent = torch.reshape(latent, (1, y_t.shape[1], y_t.shape[2], 1)) # (1, T, F*C)
+        # print(latent.shape)
+        # output = self.decoder(latent)
+        output = self.decoder(y_t)
 
         #output = torch.cat((x_c, x_n), 1)
-        output = torch.permute(output, (0, 2, 1, 3))
-        output = output.view(-1, output.shape[1], 257)
+        # output = torch.permute(output, (0, 2, 1, 3)) ???
+        output = torch.permute(output, (0, 3, 2, 1))
+        #output = output.view(-1, output.shape[1], self.model_dict['frequency_bins'][1])
 
         return output
 

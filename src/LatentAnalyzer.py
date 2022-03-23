@@ -18,13 +18,14 @@ class LatentAnalyzer:
     """
     latent neuron node 訊號分析
     """
-    def __init__(self, net, dataloader, audio_length, audio_analysis_used, args):
+    def __init__(self, net, dataloader, audio_length, audio_analysis_used, args, enum_idx=None):
         self.net = net
         self.dataloader = dataloader
         self.audio_length = audio_length  # 秒數
         self.audio_analysis_used = audio_analysis_used
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.args = args
+        self.enum_idx = enum_idx
         # --------------------- 後續參數
         self.encoder = None
         self.node_representation = None
@@ -47,7 +48,7 @@ class LatentAnalyzer:
         self.encoder = self.net.encoder
 
         #
-        os.makedirs(f"{self.args.logdir}/{self.fig_folder}")
+        os.makedirs(f"{self.args.logdir}/{self.fig_folder}", exist_ok=True)
 
     def _set_node_representation(self, replace_zero=True):
         """
@@ -60,6 +61,8 @@ class LatentAnalyzer:
         latent_matrix = None
         for data in dataloader:
             latent_code = encoder(data.to(self.device, dtype=torch.float))
+            if latent_code.dim() != 2:  # TC 的防呆
+                latent_code = latent_code.squeeze()
             if latent_matrix is None:
                 latent_matrix = latent_code
             else:
@@ -714,8 +717,12 @@ class LatentAnalyzer:
         # 取得格林威治偏移秒
         _glin = str(int(time.mktime(time.localtime())))
         os.makedirs(f"latent_representation_ana", exist_ok=True)
-        plt.savefig(f'{self.args.logdir}/plot_figures/latent_representation_ana.png')  # hard-code
-        plt.savefig(f'./latent_representation_ana/{_glin}.png')
+        if self.enum_idx is None:
+            plt.savefig(f'{self.args.logdir}/plot_figures/latent_representation_ana.png')  # hard-code
+            plt.savefig(f'./latent_representation_ana/{_glin}.png')
+        else:
+            plt.savefig(f'{self.args.logdir}/plot_figures/latent_representation_ana_{self.enum_idx}.png')  # hard-code
+            plt.savefig(f'./latent_representation_ana/{_glin}_{self.enum_idx}.png')
         return l, h
 def mel(*a):
     a = np.array(a)

@@ -6,7 +6,9 @@ import torch
 from torch.autograd import Variable
 from datetime import datetime
 import numpy as np
-from model import DAE_C, DAE_F
+from model import DAE_F
+from model import DAE_C
+from model import TC_DAE_C
 import train
 from source_separation import MFA
 from torch.utils.data import DataLoader
@@ -61,7 +63,8 @@ parser.add_argument('--useRowFilter', type=bool, default=False, help="use smooth
 #
 parser.add_argument('--depthwiseConv', type=bool, default=False)
 parser.add_argument('--depthwiseConv_K', type=int, default=2, help='activate when depthwiseConv is True')
-
+#
+parser.add_argument('--use_TC', type=bool, default=False, help="使用時間卷積模型")
 
 args = parser.parse_args()
 args.cuda = torch.cuda.is_available()
@@ -101,16 +104,18 @@ grad_scale = args.grad_scale
 # Default model dictionary
 DAE_C_dict = {
         "frequency_bins": [0, 300],
-        # "encoder": [32, 16, 8],
-        # "decoder": [8, 16, 32, 1],
         "encoder": [32, 16, 8],
-        "decoder":  [8, 16, 32, 1],
+        "decoder": [8, 16, 32, 1],
         "encoder_filter": [[1, 3], [1, 3], [1, 3]],
         "decoder_filter": [[1, 3], [1, 3], [1, 3],  [1, 1]],
         "encoder_act": "relu",
         "decoder_act": "relu",
         "dense": [],
         }
+if args.use_TC:
+    print("修改 E/D fileter")
+    DAE_C_dict["encoder"] = [600, 1800, 2400]  # 32 16 8
+    DAE_C_dict["decoder"] = [2400, 16, 32, 1]  # 8 16 32 1
 # 防呆
 assert len(DAE_C_dict['encoder']) == len(DAE_C_dict['encoder_filter'])
 assert len(DAE_C_dict['decoder']) == len(DAE_C_dict['decoder_filter'])
@@ -123,10 +128,16 @@ DAE_F_dict = {
         "decoder_act": "relu",
         }
 
-Model = {
-    'DAE_C': DAE_C.autoencoder,
-    'DAE_F': DAE_F.autoencoder,
-}
+if args.use_TC:
+    Model = {
+        'DAE_C': TC_DAE_C.TC_DAE_C,
+        'DAE_F': DAE_F.autoencoder,
+    }
+else:
+    Model = {
+        'DAE_C': DAE_C.autoencoder,
+        'DAE_F': DAE_F.autoencoder,
+    }
 
 model_dict = {
     'DAE_C': DAE_C_dict,
@@ -168,10 +179,12 @@ matplotlib.rcParams['figure.titlesize'] = 'large'
 if __name__ == "__main__":
 
     # data loader  121_1b1_Tc_sc_Meditron
-    test_filelist = ["./dataset/225_1b1_Pl_sc_Meditron.wav"]
-    _test_filelist = ["./dataset/102_1b1_Ar_sc_Meditron.wav",
+    test_filelist = ["./dataset/214_1b1_Ar_sc_Meditron.wav"]
+    #
+    _test_filelist = [  "./dataset/102_1b1_Ar_sc_Meditron.wav",
+                        "./dataset/121_1b1_Tc_sc_Meditron.wav",
                         "./dataset/121_1p1_Tc_sc_Meditron.wav",
-                        "./dataset/123_1b1_Al_sc_Meditron.wav",
+                        #"./dataset/123_1b1_Al_sc_Meditron.wav",
                         "./dataset/125_1b1_Tc_sc_Meditron.wav",
                         "./dataset/126_1b1_Al_sc_Meditron.wav",
                         "./dataset/127_1b1_Ar_sc_Meditron.wav",
@@ -179,123 +192,117 @@ if __name__ == "__main__":
                         "./dataset/143_1b1_Al_sc_Meditron.wav",
                         "./dataset/144_1b1_Al_sc_Meditron.wav",
                         "./dataset/144_1b1_Tc_sc_Meditron.wav",
-                        "./dataset/152_1b1_Al_sc_Meditron.wav",
-                        "./dataset/153_1b1_Al_sc_Meditron.wav",
                         "./dataset/159_1b1_Al_sc_Meditron.wav",
                         "./dataset/159_1b1_Ar_sc_Meditron.wav",
                         "./dataset/159_1b1_Ll_sc_Meditron.wav",
-                        "./dataset/159_1b1_Pr_sc_Meditron.wav",
                         "./dataset/171_1b1_Al_sc_Meditron.wav",
                         "./dataset/179_1b1_Al_sc_Meditron.wav",
-                        "./dataset/179_1b1_Tc_sc_Meditron.wav",
                         "./dataset/182_1b1_Tc_sc_Meditron.wav",
-                        "./dataset/183_1b1_Pl_sc_Meditron.wav",
                         "./dataset/183_1b1_Tc_sc_Meditron.wav",
-                        "./dataset/184_1b1_Ar_sc_Meditron.wav",
-                        "./dataset/187_1b1_Ll_sc_Meditron.wav",
-                        "./dataset/194_1b1_Lr_sc_Meditron.wav",
-                        "./dataset/194_1b1_Pr_sc_Meditron.wav",
-                        "./dataset/202_1b1_Ar_sc_Meditron.wav",
-                        "./dataset/208_1b1_Ll_sc_Meditron.wav",
-                        "./dataset/209_1b1_Tc_sc_Meditron.wav",
-                        "./dataset/214_1b1_Ar_sc_Meditron.wav",
-                        "./dataset/217_1b1_Tc_sc_Meditron.wav",
-                        "./dataset/224_1b1_Tc_sc_Meditron.wav",
-                        "./dataset/224_1b2_Al_sc_Meditron.wav",
-                        "./dataset/225_1b1_Pl_sc_Meditron.wav"]
+                        "./dataset/187_1b1_Ll_sc_Meditron.wav"]
+                        # "./dataset/202_1b1_Ar_sc_Meditron.wav",
+                        # "./dataset/209_1b1_Tc_sc_Meditron.wav",
+                        # "./dataset/214_1b1_Ar_sc_Meditron.wav",
+                        # "./dataset/217_1b1_Tc_sc_Meditron.wav",
+                        # "./dataset/224_1b1_Tc_sc_Meditron.wav",
+                        # "./dataset/224_1b2_Al_sc_Meditron.wav",
+                        # "./dataset/225_1b1_Pl_sc_Meditron.wav"]
     # 121_1b1_Tc_sc_Meditron
     #test_filelist = ["./dataset/4_1_5sec.wav"]
     #test_filelist = ["./dataset/senpai_data/heart_lung_sam2/mix/training_noise_呼吸/0dB/4_1.wav"]
     #test_filelist = ["./dataset/senpai_data/heart_lung_sam2/mix/training_noisy_心肺/6dB/3_0.wav"]
 
-    test_filename = test_filelist[0].split('/')[-1].split('.')[0]  # get pure-filename
-    outdir = "{}/test_".format(args.logdir)
-    # train_loader = hl_dataloader(test_filelist,
-    #                              batch_size=args.batch_size,
-    #                              shuffle=True,
-    #                              num_workers=0,
-    #                              pin_memory=False,
-    #                              FFT_dict=FFT_dict,
-    #                              args=args)
+    for test_filelist_idx, _fn_ in enumerate(test_filelist):
+        tf_idx = test_filelist_idx
+        test_filename = test_filelist[tf_idx].split('/')[-1].split('.')[0]  # get pure-filename
+        outdir = "{}/test_".format(args.logdir)
+        # train_loader = hl_dataloader(test_filelist,
+        #                              batch_size=args.batch_size,
+        #                              shuffle=True,
+        #                              num_workers=0,
+        #                              pin_memory=False,
+        #                              FFT_dict=FFT_dict,
+        #                              args=args)
 
-    train_loader_list: List[DataLoader[Any]]
-    # 單一檔案的 dataloader。
-    train_loader_list = me.get_model_input_dataloader(test_filelist,
-                                                      shuffle=False,
-                                                      num_workers=0,
-                                                      pin_memory=False,
-                                                      FFT_dict=FFT_dict,
-                                                      args=args)
-    #  用 filename list 製造更長的 dataloader 版本。
-    train_loader_multi_ver = hl_multiple_dataloader(_test_filelist,
-                                                    shuffle=False,
-                                                    args=args,
-                                                    FFT_dict=FFT_dict,
-                                                    add_slient_seq=False
-                                                    )
-    #
-    # train
-    #net = train.train(train_loader_list[0], net, args, logger)  # 只練一個
-    #net = train.train(train_loader_multi_ver, net, args, logger)
-    net.load_state_dict(torch.load(r"./log/DAE_C_2022_0323_0046_05/latest.pt"))
-
-    # 全新物件，全新感受
-    LA = LatentAnalyzer(net, train_loader_list[0],
-                        audio_length=10, audio_analysis_used=10,
-                        args=args)
-
-    # 這個會繪製 每個 neuron 的值與 fft 輸出。
-    # me.analysis_latent_space_representation(net, train_loader_list[0])
-    #LA.plot_all_fft_latent_neuron_peaks(limit=100)
-    #LA.plot_all_neuron_fft_representation(limit=0)
-
-    # 繪製 加權平均 fft
-    LA.fft_plot_length = 'All'  # 或者使用 'All'
-    # LA.plot_avg_fft(plot_otsu=True, plot_axvline=0, freq_tick=False)
-    LA.plot_claen_avg_fft()
-    LA.plot_avg_fft(plot_otsu=True, plot_axvline=0, freq_tick=True,
-                    x_log_scale=False, smooth=False, save_name="avg_spectrum (otsu)")
-    LA.plot_avg_fft(plot_otsu=False, plot_axvline=0, freq_tick=True,
-                    x_log_scale=False, smooth=False, save_name="avg_spectrum (no-otsu)")
+        train_loader_list: List[DataLoader[Any]]
+        # 單一檔案的 dataloader。所以使用 [test_filelist[tf_idx]] 脫褲子放屁寫法
+        train_loader_list = me.get_model_input_dataloader([test_filelist[tf_idx]],
+                                                          shuffle=False,
+                                                          num_workers=0,
+                                                          pin_memory=False,
+                                                          FFT_dict=FFT_dict,
+                                                          args=args)
+        #  用 filename list 製造更長的 dataloader 版本。
+        train_loader_multi_ver = hl_multiple_dataloader(_test_filelist,
+                                                        shuffle=False,
+                                                        args=args,
+                                                        FFT_dict=FFT_dict,
+                                                        add_slient_seq=True
+                                                        )
+        #
+        # train
+        net = train.train(train_loader_list[0], net, args, logger)  # 只練一個
+        #net = train.train(train_loader_multi_ver, net, args, logger)
+        #net.load_state_dict(torch.load(r"./log/DAE_C_2022_0323_1408_36_multi_train_18/latest.pt"))
 
 
-    # 分析 波
-    LA._plot_signal_peak()
-    plt.show()
+        # 全新物件，全新感受
+        LA = LatentAnalyzer(net, train_loader_list[0],
+                            audio_length=10, audio_analysis_used=10,
+                            args=args, enum_idx=None if tf_idx == 0 else tf_idx)
 
-    # Source Separation by MFA analysis.
-    mfa = MFA.MFA_source_separation(net, FFT_dict=FFT_dict, args=args)
+        # 這個會繪製 每個 neuron 的值與 fft 輸出。
+        # me.analysis_latent_space_representation(net, train_loader_list[0])
+        #LA.plot_all_fft_latent_neuron_peaks(limit=100)
+        #LA.plot_all_neuron_fft_representation(limit=0)
 
-    l, h = LA.splited_latent_representation()
-    plt.show()
+        # 繪製 加權平均 fft
+        LA.fft_plot_length = 'All'  # 或者使用 'All'
+        # LA.plot_avg_fft(plot_otsu=True, plot_axvline=0, freq_tick=False)
+        LA.plot_claen_avg_fft()
+        LA.plot_avg_fft(plot_otsu=True, plot_axvline=0, freq_tick=True,
+                        x_log_scale=False, smooth=False, save_name="avg_spectrum (otsu)")
+        LA.plot_avg_fft(plot_otsu=False, plot_axvline=0, freq_tick=True,
+                        x_log_scale=False, smooth=False, save_name="avg_spectrum (no-otsu)")
 
-    # 使用固定 thres
-    # fix_thres = LA.get_otsu_threshold()
-    # l, h = LA.get_binearlization_latent_matrix_by_fix_threshold(fix_thres,
-    #                                                             delta=4,
-    #                                                             plot=True,
-    #                                                             plot_otsu=True)
 
-    # # #
-    l_alt, h_alt = None, None
-    if l.sum() < h.sum():
-        l_alt, h_alt = h.copy(), l.copy()
-    else:
-        l_alt, h_alt = l.copy(), h.copy()
-    l_max = np.max(l_alt)
-    l_alt, h_alt = l_alt - h_alt, h
-    l_alt = np.clip(l_alt, 0, l_max)
+        # 分析 波
+        LA._plot_signal_peak()
+        plt.show()
 
-    # 將資料注入到 mfa 物件去做繪製。
-    # mfa.low_thersh_encode_img = torch.tensor(l.T, device='cuda')
-    # mfa.high_thersh_encode_img = torch.tensor(h.T, device='cuda')
-    #
-    mfa.low_thersh_encode_img = torch.tensor(l_alt.T, device='cuda')
-    mfa.high_thersh_encode_img = torch.tensor(h_alt.T, device='cuda')
+        # Source Separation by MFA analysis.
+        mfa = MFA.MFA_source_separation(net, FFT_dict=FFT_dict, args=args)
 
-    for test_file in test_filelist:
+
+        l, h = LA.splited_latent_representation()
+        plt.show()
+
+        # 使用固定 thres
+        # fix_thres = LA.get_otsu_threshold()
+        # l, h = LA.get_binearlization_latent_matrix_by_fix_threshold(fix_thres,
+        #                                                             delta=4,
+        #                                                             plot=True,
+        #                                                             plot_otsu=True)
+
+        l_alt, h_alt = None, None
+        if l.sum() < h.sum():
+            l_alt, h_alt = h.copy(), l.copy()
+        else:
+            l_alt, h_alt = l.copy(), h.copy()
+        l_max = np.max(l_alt)
+        l_alt, h_alt = l_alt - h_alt, h
+        l_alt = np.clip(l_alt, 0, l_max)
+
+        # 將資料注入到 mfa 物件去做繪製。
+        # mfa.low_thersh_encode_img = torch.tensor(l.T, device='cuda')
+        # mfa.high_thersh_encode_img = torch.tensor(h.T, device='cuda')
+        #
+        mfa.low_thersh_encode_img = torch.tensor(l_alt.T, device='cuda')
+        mfa.high_thersh_encode_img = torch.tensor(h_alt.T, device='cuda')
+
+        #for test_file in test_filelist:
         # load test data
-        lps, phase, mean, std = val_dataloader(test_file, FFT_dict)
+        lps, phase, mean, std = val_dataloader(test_filelist[tf_idx], FFT_dict)
         mfa.source_separation(np.array(lps), np.array(phase),
                               np.array(mean), np.array(std),
                               filedir=outdir,

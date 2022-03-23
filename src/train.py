@@ -60,8 +60,9 @@ def train(train_loader, net=None, args=None, logger=None):
     old_file = 0
     __loss = None
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    pbar = tqdm(range(args.epochs), smoothing=0.1, ncols=100)
     # start training
-    for epoch in tqdm(range(args.epochs), desc='Training epoch', smoothing=0.1, ncols=100):
+    for epoch in pbar:
         avg_batch_loss = 0
         for batch_idx, data in enumerate(train_loader):
             if args.cuda:
@@ -93,6 +94,7 @@ def train(train_loader, net=None, args=None, logger=None):
         __loss = avg_batch_loss / batch_idx
         #scheduler_RLROP.step(__loss)
         logger("epoch{0}:{1}".format(epoch, __loss))
+        pbar.set_description("Training progress: Epoch{0} loss={1:.6f}".format(epoch+1, __loss))
         figure_recoder_loss.append(__loss.detach().cpu().item())
         figure_recoder_lr.append(train_scheduler.get_last_lr()[0])
 

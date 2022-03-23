@@ -169,14 +169,25 @@ class MFA_source_separation(object):
         sources = torch.unsqueeze(torch.zeros_like(x), 0)
         # Encode input
         latent_code = self.model.encoder(x)
+        if latent_code.dim() != 2:  # dim(frame, latent_space, 1, 1) = 4.
+            latent_code = latent_code.squeeze()
         # MFA analysis for identifying latent neurons 's label
         label = self.MFA(latent_code.cpu().detach().numpy())
         # Reconstruct input
-        sources[0] = self.model.decoder(latent_code)  # 輸入維度: (音訊長度[音框], latent space)
+        if self.args.use_TC:  # TC 的 model 多了兩個維度
+            latent_code = latent_code.unsqueeze(2).unsqueeze(2)
+        # TC 的 decoder 會需要多出來的維度，故需要先判斷再賦值
+        _delay_assign_ = self.model.decoder(latent_code)
+        if self.args.use_TC:
+            _delay_assign_ = torch.permute(_delay_assign_, (0, 3, 2, 1))
+        sources[0] = _delay_assign_  # 輸入維度: (音訊長度[音框], latent space)
         # Discriminate latent code for different sources.
         for source_idx in range(0, self.source_num):
             y_s = self.freq_modulation(source_idx, label, latent_code)
-            sources = torch.cat((sources, torch.unsqueeze(self.model.decoder(y_s), 0)), 0)
+            _delay_assign_ = self.model.decoder(y_s)
+            if self.args.use_TC:
+                _delay_assign_ = torch.permute(_delay_assign_, (0, 3, 2, 1))
+            sources = torch.cat((sources, torch.unsqueeze(_delay_assign_, 0)), 0)
         # len 將會是 self.source_num + 1
         sources = torch.squeeze(sources).permute(0, 2, 1).detach().cpu().numpy()
 
@@ -184,8 +195,21 @@ class MFA_source_separation(object):
         # 取得從 decoder 回來的資料
         my_sources = None  # 我自己的分離方法，產出的(命名概念源自於此程式 原有的source變數)
         if self.low_thersh_encode_img is not None:
-            _ll = torch.unsqueeze(self.model.decoder(self.low_thersh_encode_img), 0)  # 取得自己弄得 latent matrix
-            _hh = torch.unsqueeze(self.model.decoder(self.high_thersh_encode_img), 0)
+            if self.args.use_TC:
+                #
+                _delay_assign_1_ = self.low_thersh_encode_img
+                _delay_assign_1_ = torch.unsqueeze(_delay_assign_1_, 2)
+                _delay_assign_1_ = torch.unsqueeze(_delay_assign_1_, 2)
+                _ll = torch.unsqueeze(self.model.decoder(_delay_assign_1_), 0)
+                #
+                _delay_assign_2_ = self.high_thersh_encode_img
+                _delay_assign_2_ = torch.unsqueeze(_delay_assign_2_, 2)
+                _delay_assign_2_ = torch.unsqueeze(_delay_assign_2_, 2)
+                _hh = torch.unsqueeze(self.model.decoder(_delay_assign_2_), 0)
+
+            else:
+                _ll = torch.unsqueeze(self.model.decoder(self.low_thersh_encode_img), 0)  # 取得自己弄得 latent matrix
+                _hh = torch.unsqueeze(self.model.decoder(self.high_thersh_encode_img), 0)
             my_sources = _ll
             my_sources = torch.cat((my_sources, _hh), 0)
             my_sources = torch.squeeze(my_sources).permute(0, 2, 1).detach().cpu().numpy()  # 如法炮製
