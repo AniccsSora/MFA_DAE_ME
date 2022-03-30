@@ -55,7 +55,7 @@ def train(train_loader, net=None, args=None, logger=None):
     #                                                 verbose=True)
     figure_recoder_loss = []
     figure_recoder_loss_beta = []
-    beta_loss = False  # 使用自己設計的額外 loss function
+    beta_loss = args.beta_loss  # 使用自己設計的額外 loss function
     figure_recoder_lr = []
     old_file = 0
     __loss = None

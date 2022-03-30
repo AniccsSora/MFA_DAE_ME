@@ -56,7 +56,7 @@ parser.add_argument('--fix_thres', type=int, default=-1)
 #
 parser.add_argument('--time_convolution', type=bool, default=False)
 #
-parser.add_argument('--row_representation_useConvVer', type=bool, default=False)
+parser.add_argument('--row_representation_useConvVer', type=bool, default=False, help='是否也評估周圍的訊號')
 parser.add_argument('--row_representation_convNum', type=int, default=11)
 #
 parser.add_argument('--useRowFilter', type=bool, default=False, help="use smooth filter to each row representation (latent space)")
@@ -65,6 +65,8 @@ parser.add_argument('--depthwiseConv', type=bool, default=False)
 parser.add_argument('--depthwiseConv_K', type=int, default=2, help='activate when depthwiseConv is True')
 #
 parser.add_argument('--use_TC', type=bool, default=False, help="使用時間卷積模型")
+#
+parser.add_argument('--beta_loss', type=bool, default=False, help="使用額外 loss 項")
 
 args = parser.parse_args()
 args.cuda = torch.cuda.is_available()
@@ -179,7 +181,7 @@ matplotlib.rcParams['figure.titlesize'] = 'large'
 if __name__ == "__main__":
 
     # data loader  121_1b1_Tc_sc_Meditron
-    test_filelist = ["./dataset/214_1b1_Ar_sc_Meditron.wav"]
+    test_filelist = ["./dataset/121_1b1_Tc_sc_Meditron.wav"]
     #
     _test_filelist = [  "./dataset/102_1b1_Ar_sc_Meditron.wav",
                         "./dataset/121_1b1_Tc_sc_Meditron.wav",

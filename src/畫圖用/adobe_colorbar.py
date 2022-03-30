@@ -1,8 +1,11 @@
 from matplotlib.colors import ListedColormap
 import numpy as np
 
-# 使用 adobe colorbar
-colors_rgb = np.array([[  0,   0,   0],
+class Adobe_color_maker:
+    
+    def __init__(self):
+        # 使用 adobe colorbar
+        self.colors_rgb = np.array([[  0,   0,   0],
        [  1,   1,   2],
        [  2,   1,   2],
        [  2,   1,   3],
@@ -287,7 +290,32 @@ colors_rgb = np.array([[  0,   0,   0],
        [254, 238,  91],
        [254, 239,  91],
        [255, 240,  91]], dtype=np.uint8)
+        
+    def get_colorbar(self):
+        return self._make_cb(self.colors_rgb)
+    
+    def _make_cb(self, cb):
+        assert cb.dtype == np.uint8
+        
+        return ListedColormap(cb/255.0)
+    
+    def get_modifiy_cb(self, after=0.5, ratio=2):
+        """
+        根具原始設定 cb 去做調整 (self.colors_rgb)
+        cb_list : color bar， numpy array。
+        after: float, 幾%前的color 要做增幅。
+        ratio: int, 增幅幾倍。
+        """
+        res = []
 
+        after_idx = int(len(self.colors_rgb)*after)
 
-def get_colorbar():
-    return ListedColormap(colors_rgb/255.0)
+        for idx, color in enumerate(self.colors_rgb):
+            if idx < after_idx:
+                for _ in range(ratio):
+                    res.append(color)
+            else:
+                res.append(color)
+                
+
+        return self._make_cb(np.array(res, dtype=self.colors_rgb.dtype))

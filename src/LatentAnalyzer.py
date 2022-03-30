@@ -389,6 +389,20 @@ class LatentAnalyzer:
 
         return res, res_freq
 
+
+    def _cal_thresholding_representation(self):
+        t = np.copy(self.node_representation)
+        _r = (255 / np.max(t))
+
+        uint8_dtype_like = np.clip(t * _r, 0, 255)  # 模擬圖片 [0, 255]
+        uint8_dtype_like = np.array(uint8_dtype_like, dtype=np.uint8)
+
+        blur = cv2.GaussianBlur(uint8_dtype_like, (5, 5), 0)
+        thresh_mode = cv2.THRESH_BINARY + cv2.THRESH_OTSU
+        ret3, th3 = cv2.threshold(blur, 0, 255, thresh_mode)
+
+        return th3
+
     def _calc_node_representation_Conv_Ver(self, conv_size):
         #  製造此函原因: 原本的分析都是依照 一條row，但是有可能會出現一條row的頻率變化不明顯的問題。
         #  那我乾脆合成 "附近幾條row "當作你自己的表示搂~，那這樣會不會讓變化 更好觀察?
@@ -439,6 +453,7 @@ class LatentAnalyzer:
             threshold = fix_thres_threshold
 
         every_neuron_fft_peak = self._get_every_node_fft_peak()
+
         high, low = [], []
         for idx, peak in enumerate(every_neuron_fft_peak):
             if peak > threshold + delta:
