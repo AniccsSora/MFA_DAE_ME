@@ -161,9 +161,12 @@ class LatentAnalyzer:
         # 取得截斷版本
         _1d_tensor_short = _1d_tensor[0:cut_length]
 
+        #fig = plt.figure(figsize=(8, 3))
+
         ax = plt.subplot(211)
         ax.set_title("latent representation")
-        plt.plot(_1d_tensor_short)
+
+        plt.plot(_1d_tensor_short)  # , linewidth=0.5)
 
         ax = plt.subplot(212)
         #_1d_tensor_short_odd_minus1 = np.copy(_1d_tensor_short)
@@ -180,7 +183,7 @@ class LatentAnalyzer:
         _freq = np.fft.rfftfreq(_.size, d=1./self._sample_rate)
         # _ = np.log10(_)  # ------------------------------------  取 log
         draw_val = _
-        plt.plot(draw_val)
+        plt.plot(draw_val)  # , linewidth=0.5)
         pick_vline = np.argmax(draw_val)
         plt.axvline(x=pick_vline, color='red', linewidth=1, alpha=0.5)
         ax.set_title(f"fft latent representation, p={pick_vline}")
