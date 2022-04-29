@@ -3,7 +3,6 @@ import argparse
 import time
 from utils import misc
 import torch
-from torch.autograd import Variable
 from datetime import datetime
 import numpy as np
 from model import DAE_F
@@ -14,10 +13,8 @@ from source_separation import MFA
 from torch.utils.data import DataLoader
 from dataset.HLsep_dataloader import hl_dataloader, val_dataloader
 from dataset.multiple_dataloader import hl_multiple_dataloader
-import scipy.io.wavfile as wav
 import os
 from os.path import join as pjoin
-import tester
 import logging
 import util_me as me
 from typing import List, Any
@@ -29,8 +26,6 @@ logging.getLogger(__name__)
 
 # parser#
 parser = argparse.ArgumentParser(description='PyTorch Source Separation')
-
-#
 parser.add_argument('--model_type', type=str, default='DAE_C', help='model type', choices=['DAE_C', 'DAE_F'])
 parser.add_argument('--data_feature', type=str, default='lps', help='lps or wavform')
 parser.add_argument('--pretrained', default=False, help='load pretrained model or not')
@@ -38,7 +33,7 @@ parser.add_argument('--pretrained_path', type=str, default=None, help='pretraine
 parser.add_argument('--trainOrtest', type=str, default="train", help='status of training')
 # training hyperparameters
 parser.add_argument('--optim', type=str, default="Adam", help='optimizer for training', choices=['RMSprop', 'SGD', 'Adam'])
-parser.add_argument('--batch_size', type=int, default=32, help='batch size for training (default: 32)')
+parser.add_argument('--batch_size', type=int, default=16, help='batch size for training (default: 32)')
 parser.add_argument('--lr', type=float, default=1e-4, help='initial learning rate for training (default: 1e-3)')
 parser.add_argument('--CosineAnnealingWarmRestarts', type=bool, default=True, help='optimizer scheduler for training')
 parser.add_argument('--epochs', type=int, default=50, help='number of epochs to train (default: 10)')
@@ -262,9 +257,9 @@ if __name__ == "__main__":
                                                         )
         #
         # train
-        #net = train.train(train_loader_list[0], net, args, logger)  # 只練一個
+        net = train.train(train_loader_list[0], net, args, logger)  # 只練一個
         #net = train.train(train_loader_multi_ver, net, args, logger)
-        net.load_state_dict(torch.load(r"./log/DAE_C_2022_0406_1628_44/latest.pt"))
+        #net.load_state_dict(torch.load(r"./log/DAE_C_2022_0323_1408_36_multi_train_18/latest.pt"))
 
 
         # 全新物件，全新感受

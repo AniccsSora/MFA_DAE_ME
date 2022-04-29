@@ -8,13 +8,13 @@ sr=2000;
 
 shift=0;
 shrink=0;
-wavfilename1 = 'D:\import_data\heart_lung_sam2_exp_eval\1file_sam2_DDAE\HL_FFTseparate\source1\6dB\4_1.wav'
-wavfilename2 = 'D:\import_data\heart_lung_sam2_exp_eval\1file_sam2_DDAE\HL_FFTseparate\source0\6dB\4_1.wav'
+wavfilename1 = 'D:\git-repo\MFA_DAE_ME\src\dataset\224_1b1_Tc_sc_Meditron.wav'
+wavfilename2 = 'D:\git-repo\MFA_DAE_ME\src\dataset\224_1b1_Tc_sc_Meditron.wav'
 
 % wavfilename1 = 'D:\import_data\heart_lung_sam2_exp_eval\1file_heart_lung_sam2_0319\HL_FFTseparate\source2\6dB\4_1.wav'
 % wavfilename2 = 'D:\import_data\heart_lung_sam2_exp_eval\1file_heart_lung_sam2_0319\HL_FFTseparate\source0\6dB\4_1.wav'
-wavfilename1 = 'D:\import_data\heart_lung_sam2_exp_eval\1file_heart_lung_sam2_0319\HLseparate\source2\6dB\4_1.wav'
-wavfilename2 = 'D:\import_data\heart_lung_sam2_exp_eval\1file_heart_lung_sam2_0319\HLseparate\source1\6dB\4_1.wav'
+wavfilename1 = 'D:\git-repo\MFA_DAE_ME\src\dataset\224_1b1_Tc_sc_Meditron.wav'
+wavfilename2 = 'D:\git-repo\MFA_DAE_ME\src\dataset\224_1b1_Tc_sc_Meditron.wav'
 
 % wavfilename1 = 'D:\import_data\heart_lung_sam2_exp_eval\heart_lung_sam2_NMF_0318\HL_FFTseparate\source0\6dB\4_1.wav'
 % wavfilename2 = 'D:\import_data\heart_lung_sam2_exp_eval\heart_lung_sam2_NMF_0318\HL_FFTseparate\source1\6dB\4_1.wav'
@@ -23,15 +23,15 @@ wavfilename2 = 'D:\import_data\heart_lung_sam2_exp_eval\1file_heart_lung_sam2_03
 % wavfilename2 = 'D:\import_data\heart_lung_sam2_exp_eval\heart_lung_sam2_NMF_0215\HL_FFTseparate\source1\6dB\4_1.wav'
 
 % 
- wavfilename1 = 'D:\Á¾\Heartlung\data\1file_heart_lung_sam2_2020-3-12_1_400_0.01_1024_1025_DCAE_relu_tanh_2_PC_NMF_cluster2\HL_FFTseparate\source1\6dB\4_1.wav'
- wavfilename2 = 'D:\Á¾\Heartlung\data\1file_heart_lung_sam2_2020-3-12_1_400_0.01_1024_1025_DCAE_relu_tanh_2_PC_NMF_cluster2\HL_FFTseparate\source1\6dB\4_1.wav'
+ wavfilename1 = 'D:\ï¿½ï¿½\Heartlung\data\1file_heart_lung_sam2_2020-3-12_1_400_0.01_1024_1025_DCAE_relu_tanh_2_PC_NMF_cluster2\HL_FFTseparate\source1\6dB\4_1.wav'
+ wavfilename2 = 'D:\ï¿½ï¿½\Heartlung\data\1file_heart_lung_sam2_2020-3-12_1_400_0.01_1024_1025_DCAE_relu_tanh_2_PC_NMF_cluster2\HL_FFTseparate\source1\6dB\4_1.wav'
 % % 
 %   wavfilename1 = 'D:\import_data\heart_lung_sam2_exp_eval\heart_lung_sam2\mix\source0\6dB\4_1.wav'
 %  wavfilename2 = 'D:\import_data\heart_lung_sam2_exp_eval\heart_lung_sam2\mix\source1\6dB\4_1.wav'
 %
 exp_path = 'D:\exp_fig\'
-wavfilename1 = 'D:\Git\qpzm_mfa_dae\src\senpai_data\heart_lung_sam2\mix\training_clean_¤ß¸õ\0dB\4_1.wav'
-wavfilename2 = 'D:\Git\qpzm_mfa_dae\src\senpai_data\heart_lung_sam2\mix\training_noise_©I§l\0dB\4_1.wav'
+wavfilename1 = 'D:\git-repo\MFA_DAE_ME\src\dataset\224_1b1_Tc_sc_Meditron.wav'
+wavfilename2 = 'D:\git-repo\MFA_DAE_ME\src\dataset\224_1b1_Tc_sc_Meditron.wav'
 
 FontSize = 20
 figure(1)
@@ -53,7 +53,7 @@ set(gca,'FontWeight','bold','fontsize',FontSize,'Fontname','Times New Roman');
 ylabel('Frequency (Hz)','fontsize',FontSize,'Fontname','Times New Roman');
   xlabel({'Time(sec)'},'fontsize',FontSize,'Fontname','Times New Roman');
 
-% set (gca,'position',[0.1,0.3,0.3,0.5] );%?¸m§¤??¦bfigture¤¤ªº?¶Z,¥|???¤À?ªí¥Üªº¬O¥ª?¬É¡A¤U?¬É¡A°ª«×¡A?«×¡C
+% set (gca,'position',[0.1,0.3,0.3,0.5] );%?ï¿½mï¿½ï¿½??ï¿½bfigtureï¿½ï¿½ï¿½ï¿½?ï¿½Z,ï¿½|???ï¿½ï¿½?ï¿½ï¿½Üªï¿½ï¿½Oï¿½ï¿½?ï¿½É¡Aï¿½U?ï¿½É¡Aï¿½ï¿½ï¿½×¡A?ï¿½×¡C
 set(gcf,'Position',[100 100 260 220]);
 
 subplot(122)

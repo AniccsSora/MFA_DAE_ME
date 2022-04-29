@@ -13,9 +13,9 @@ exp_path = '.\exp_fig\';
 %---- 路徑設定
 % home_windows ='D:\Git'
 % school_windows='D:\git-repo'
-prj_path="D:\Git";  % 專案位置  //linux : /home/user/git-repo,
+prj_path="D:\git-repo";  % 專案位置  //linux : /home/user/git-repo,
 % ---------------------------------------------------------------
-timestamp_foldern='DAE_C_2022_0331_0245_07'; % log 下 時戳資料夾名
+timestamp_foldern='DAE_C_2022_0429_1600_19'; % log 下 時戳資料夾名
 
 wav_name='121_1b1_Tc_sc_Meditron'; % 音訊名稱
 %121_1b1_Tc_sc_Meditron

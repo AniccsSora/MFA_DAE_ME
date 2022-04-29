@@ -9,7 +9,7 @@ sr=2000;
 shift=0;
 shrink=0;
 
-  wavfilename1 =  'D:\Git\qpzm_mfa_dae\src\dataset\training_noisy_¤ßªÍ\0dB\4_1.wav';
+  wavfilename1 =  'D:\git-repo\MFA_DAE_ME\src\dataset\224_1b1_Tc_sc_Meditron.wav'; % ï¿½É°ï¿½ï¿½
 %  wavfilename2 = 'D:\import_data\heart_lung_sam2_exp_eval\heart_lung_sam2\mix\source1\6dB\4_1.wav'
 %
 
@@ -36,7 +36,7 @@ set(gca,'FontWeight','bold','fontsize',FontSize,'Fontname','Times New Roman');
 
 ylabel('Amplitude','fontsize',FontSize,'Fontname','Times New Roman');
 
-% set (gca,'position',[0.1,0.3,0.3,0.5] );%?¸m§¤??¦bfigture¤¤ªº?¶Z,¥|???¤À?ªí¥Üªº¬O¥ª?¬É¡A¤U?¬É¡A°ª«×¡A?«×¡C
+% set (gca,'position',[0.1,0.3,0.3,0.5] );%?ï¿½mï¿½ï¿½??ï¿½bfigtureï¿½ï¿½ï¿½ï¿½?ï¿½Z,ï¿½|???ï¿½ï¿½?ï¿½ï¿½Üªï¿½ï¿½Oï¿½ï¿½?ï¿½É¡Aï¿½U?ï¿½É¡Aï¿½ï¿½ï¿½×¡A?ï¿½×¡C
 %  set(gcf,'unit','normalized','position',[0.2,0.2,0.48,0.32]);
 set(gcf,'Position',[100 100 260 220]);
 set(gcf,'unit','normalized','position',[0.2,0.2,0.56,0.64]);
