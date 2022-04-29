@@ -29,6 +29,8 @@ logging.getLogger(__name__)
 
 # parser#
 parser = argparse.ArgumentParser(description='PyTorch Source Separation')
+
+#
 parser.add_argument('--model_type', type=str, default='DAE_C', help='model type', choices=['DAE_C', 'DAE_F'])
 parser.add_argument('--data_feature', type=str, default='lps', help='lps or wavform')
 parser.add_argument('--pretrained', default=False, help='load pretrained model or not')
@@ -67,6 +69,8 @@ parser.add_argument('--depthwiseConv_K', type=int, default=2, help='activate whe
 parser.add_argument('--use_TC', type=bool, default=False, help="使用時間卷積模型")
 #
 parser.add_argument('--beta_loss', type=bool, default=False, help="使用額外 loss 項")
+#
+parser.add_argument('--THE_i', type=int, default=-1, help="test")
 
 args = parser.parse_args()
 args.cuda = torch.cuda.is_available()
@@ -183,10 +187,10 @@ if __name__ == "__main__":
     # data loader  121_1b1_Tc_sc_Meditron
     test_filelist = ["./dataset/121_1b1_Tc_sc_Meditron.wav"]
     #
-    _test_filelist = [  "./dataset/102_1b1_Ar_sc_Meditron.wav",
+    _test_filelist =   ["./dataset/102_1b1_Ar_sc_Meditron.wav",
                         "./dataset/121_1b1_Tc_sc_Meditron.wav",
                         "./dataset/121_1p1_Tc_sc_Meditron.wav",
-                        #"./dataset/123_1b1_Al_sc_Meditron.wav",
+                        "./dataset/123_1b1_Al_sc_Meditron.wav",
                         "./dataset/125_1b1_Tc_sc_Meditron.wav",
                         "./dataset/126_1b1_Al_sc_Meditron.wav",
                         "./dataset/127_1b1_Ar_sc_Meditron.wav",
@@ -194,21 +198,36 @@ if __name__ == "__main__":
                         "./dataset/143_1b1_Al_sc_Meditron.wav",
                         "./dataset/144_1b1_Al_sc_Meditron.wav",
                         "./dataset/144_1b1_Tc_sc_Meditron.wav",
+                        "./dataset/152_1b1_Al_sc_Meditron.wav",
+                        "./dataset/153_1b1_Al_sc_Meditron.wav",
                         "./dataset/159_1b1_Al_sc_Meditron.wav",
                         "./dataset/159_1b1_Ar_sc_Meditron.wav",
                         "./dataset/159_1b1_Ll_sc_Meditron.wav",
+                        "./dataset/159_1b1_Pr_sc_Meditron.wav",
                         "./dataset/171_1b1_Al_sc_Meditron.wav",
                         "./dataset/179_1b1_Al_sc_Meditron.wav",
+                        "./dataset/179_1b1_Tc_sc_Meditron.wav",
                         "./dataset/182_1b1_Tc_sc_Meditron.wav",
+                        "./dataset/183_1b1_Pl_sc_Meditron.wav",
                         "./dataset/183_1b1_Tc_sc_Meditron.wav",
-                        "./dataset/187_1b1_Ll_sc_Meditron.wav"]
-                        # "./dataset/202_1b1_Ar_sc_Meditron.wav",
-                        # "./dataset/209_1b1_Tc_sc_Meditron.wav",
-                        # "./dataset/214_1b1_Ar_sc_Meditron.wav",
-                        # "./dataset/217_1b1_Tc_sc_Meditron.wav",
-                        # "./dataset/224_1b1_Tc_sc_Meditron.wav",
-                        # "./dataset/224_1b2_Al_sc_Meditron.wav",
-                        # "./dataset/225_1b1_Pl_sc_Meditron.wav"]
+                        "./dataset/184_1b1_Ar_sc_Meditron.wav",
+                        "./dataset/187_1b1_Ll_sc_Meditron.wav",
+                        "./dataset/194_1b1_Lr_sc_Meditron.wav",
+                        "./dataset/194_1b1_Pr_sc_Meditron.wav",
+                        "./dataset/202_1b1_Ar_sc_Meditron.wav",
+                        "./dataset/208_1b1_Ll_sc_Meditron.wav",
+                        "./dataset/209_1b1_Tc_sc_Meditron.wav",
+                        "./dataset/214_1b1_Ar_sc_Meditron.wav",
+                        "./dataset/217_1b1_Tc_sc_Meditron.wav",
+                        "./dataset/224_1b1_Tc_sc_Meditron.wav",
+                        "./dataset/224_1b2_Al_sc_Meditron.wav",
+                        "./dataset/225_1b1_Pl_sc_Meditron.wav"]  # i=34
+
+    # for command running
+    if args.THE_i != -1:
+        test_filelist = _test_filelist[args.THE_i]
+        print("use {} !!!".format(args.THE_i))
+
     # 121_1b1_Tc_sc_Meditron
     #test_filelist = ["./dataset/4_1_5sec.wav"]
     #test_filelist = ["./dataset/senpai_data/heart_lung_sam2/mix/training_noise_呼吸/0dB/4_1.wav"]
@@ -243,9 +262,9 @@ if __name__ == "__main__":
                                                         )
         #
         # train
-        net = train.train(train_loader_list[0], net, args, logger)  # 只練一個
+        #net = train.train(train_loader_list[0], net, args, logger)  # 只練一個
         #net = train.train(train_loader_multi_ver, net, args, logger)
-        #net.load_state_dict(torch.load(r"./log/DAE_C_2022_0323_1408_36_multi_train_18/latest.pt"))
+        net.load_state_dict(torch.load(r"./log/DAE_C_2022_0406_1628_44/latest.pt"))
 
 
         # 全新物件，全新感受
