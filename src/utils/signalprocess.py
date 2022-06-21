@@ -35,6 +35,8 @@ def wav2lps(y, FFTSize = 512, Hop_length = 256, Win_length = 512, normalize = Fa
         sr, y = wav.read(y)
         if y.dtype == np.int16:
             y = y/32767.
+        elif y.dtype == np.int32:
+            y = y/(2**32/2-1)
         else:
             raise NotImplementedError(f"Not support WAV format. : {y.dtype}")
 
