@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 import argparse
+from tqdm import tqdm
 import time
+import numpy as np
 from utils import misc
 import torch
 from datetime import datetime
-import numpy as np
 from model import DAE_F
 from model import DAE_C
 from model import TC_DAE_C
@@ -33,7 +34,7 @@ parser.add_argument('--pretrained_path', type=str, default=None, help='pretraine
 parser.add_argument('--trainOrtest', type=str, default="train", help='status of training')
 # training hyperparameters
 parser.add_argument('--optim', type=str, default="Adam", help='optimizer for training', choices=['RMSprop', 'SGD', 'Adam'])
-parser.add_argument('--batch_size', type=int, default=16, help='batch size for training (default: 32)')
+parser.add_argument('--batch_size', type=int, default=32, help='batch size for training (default: 32)')
 parser.add_argument('--lr', type=float, default=1e-4, help='initial learning rate for training (default: 1e-3)')
 parser.add_argument('--CosineAnnealingWarmRestarts', type=bool, default=True, help='optimizer scheduler for training')
 parser.add_argument('--epochs', type=int, default=50, help='number of epochs to train (default: 10)')
@@ -65,9 +66,10 @@ parser.add_argument('--use_TC', type=bool, default=False, help="使用時間卷�
 #
 parser.add_argument('--beta_loss', type=bool, default=False, help="使用額外 loss 項")
 #
-parser.add_argument('--THE_i', type=int, default=-1, help="test")
+parser.add_argument('--THE_i', type=int, default=-1, help="test")  # default -1
 
 args = parser.parse_args()
+
 args.cuda = torch.cuda.is_available()
 #  misc.logger.init(args.logdir, 'train_log_')  # 拒用
 #  logger = misc.logger.info  #  == print()
@@ -104,7 +106,7 @@ grad_scale = args.grad_scale
 
 # Default model dictionary
 DAE_C_dict = {
-        "frequency_bins": [0, 300],
+        "frequency_bins": [0, 300],  #300
         "encoder": [32, 16, 8],
         "decoder": [8, 16, 32, 1],
         "encoder_filter": [[1, 3], [1, 3], [1, 3]],
@@ -149,7 +151,7 @@ model_dict = {
 # Default fourier transform parameters
 FFT_dict = {
     'sr': 8000,
-    'frequency_bins': [0, 300],
+    'frequency_bins': [0, 300], # 300
     'FFTSize': 2048,  # 2048
     'Hop_length': 128,  # 128
     'Win_length': 2048,  # 2048
@@ -177,10 +179,21 @@ matplotlib.rcParams['font.size'] = 14
 matplotlib.rcParams['legend.fontsize'] = 'large'
 matplotlib.rcParams['figure.titlesize'] = 'large'
 
+
+def read_file():
+    prefix = "./dataset/"
+    with open("./file_list.txt") as f:
+        lines = f.readlines()
+        lines = ["{}{}".format(prefix, _.replace('\n', '')) for _ in lines]
+
+    return lines
+
+
 if __name__ == "__main__":
 
-    # data loader  121_1b1_Tc_sc_Meditron
-    test_filelist = ["./dataset/121_1b1_Tc_sc_Meditron.wav"]
+    # data loader  121_1b1_Tc_sc_Meditron  ./dataset/4_1.wav
+    # test_filelist = ["./dataset/102_1b1_Ar_sc_Meditron.wav"] # 單一檔案
+    test_filelist = read_file()
     #
     _test_filelist =   ["./dataset/102_1b1_Ar_sc_Meditron.wav",
                         "./dataset/121_1b1_Tc_sc_Meditron.wav",
@@ -220,7 +233,7 @@ if __name__ == "__main__":
 
     # for command running
     if args.THE_i != -1:
-        test_filelist = _test_filelist[args.THE_i]
+        test_filelist = [_test_filelist[args.THE_i]]
         print("use {} !!!".format(args.THE_i))
 
     # 121_1b1_Tc_sc_Meditron
@@ -228,6 +241,11 @@ if __name__ == "__main__":
     #test_filelist = ["./dataset/senpai_data/heart_lung_sam2/mix/training_noise_呼吸/0dB/4_1.wav"]
     #test_filelist = ["./dataset/senpai_data/heart_lung_sam2/mix/training_noisy_心肺/6dB/3_0.wav"]
 
+    # pbar = tqdm(range(args.epochs), smoothing=0.1, ncols=100)
+    # # # start training
+    # # for epoch in pbar:
+    # #
+    # #for test_filelist_idx, _fn_ in enumerate(test_filelist):
     for test_filelist_idx, _fn_ in enumerate(test_filelist):
         tf_idx = test_filelist_idx
         test_filename = test_filelist[tf_idx].split('/')[-1].split('.')[0]  # get pure-filename
@@ -255,12 +273,14 @@ if __name__ == "__main__":
                                                         FFT_dict=FFT_dict,
                                                         add_slient_seq=True
                                                         )
-        #
+        # re get model
+        net = Model[args.model_type](model_dict=model_dict[args.model_type], args=args, logger=logger).cuda()
         # train
         net = train.train(train_loader_list[0], net, args, logger)  # 只練一個
         #net = train.train(train_loader_multi_ver, net, args, logger)
-        #net.load_state_dict(torch.load(r"./log/DAE_C_2022_0323_1408_36_multi_train_18/latest.pt"))
-
+        #net.load_state_dict(torch.load(r"./log/DAE_C_2022_0505_0126_06/latest.pt"))
+        # load and train
+        #net = train.train(train_loader_list[0], net, args, logger)  # 只練一個
 
         # 全新物件，全新感受
         LA = LatentAnalyzer(net, train_loader_list[0],

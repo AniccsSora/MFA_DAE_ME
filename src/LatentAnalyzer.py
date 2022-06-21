@@ -456,7 +456,7 @@ class LatentAnalyzer:
             threshold = fix_thres_threshold
 
         every_neuron_fft_peak = self._get_every_node_fft_peak()
-
+        print("The RAW threshold = {}".format(threshold))
         high, low = [], []
         for idx, peak in enumerate(every_neuron_fft_peak):
             if peak > threshold + delta:
