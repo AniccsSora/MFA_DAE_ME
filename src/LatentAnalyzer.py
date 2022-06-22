@@ -59,6 +59,14 @@ class LatentAnalyzer:
         encoder = self.encoder
         dataloader = self.dataloader
         latent_matrix = None
+        __DEBUG_data = None # debug 用
+        for data in dataloader:
+            if __DEBUG_data is None:
+                __DEBUG_data = data
+            else:
+
+                __DEBUG_data = torch.cat((__DEBUG_data, data), axis=0)
+
         for data in dataloader:
             latent_code = encoder(data.to(self.device, dtype=torch.float))
             if latent_code.dim() != 2:  # TC 的防呆

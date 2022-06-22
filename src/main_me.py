@@ -192,8 +192,8 @@ def read_file():
 if __name__ == "__main__":
 
     # data loader  121_1b1_Tc_sc_Meditron  ./dataset/4_1.wav
-    # test_filelist = ["./dataset/102_1b1_Ar_sc_Meditron.wav"] # 單一檔案
-    test_filelist = read_file()
+    test_filelist = ["./dataset/4_1.wav"] # 單一檔案
+    #test_filelist = read_file()
     #
     _test_filelist =   ["./dataset/102_1b1_Ar_sc_Meditron.wav",
                         "./dataset/121_1b1_Tc_sc_Meditron.wav",
@@ -274,6 +274,7 @@ if __name__ == "__main__":
                                                         add_slient_seq=True
                                                         )
         # re get model
+        del(net)
         net = Model[args.model_type](model_dict=model_dict[args.model_type], args=args, logger=logger).cuda()
         # train
         net = train.train(train_loader_list[0], net, args, logger)  # 只練一個
